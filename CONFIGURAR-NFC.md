@@ -4,7 +4,7 @@ Primero publicá la página en HTTPS. Un archivo local o `localhost` no sirve pa
 
 1. Abrí la web publicada. Abajo, tocá **Organización**.
 2. Contraseña: `nadielaadivina`.
-3. Ingresá la dirección pública completa, por ejemplo `https://tu-sitio.com/`.
+3. Ingresá la dirección pública completa, por ejemplo `https://benjaguerra192.github.io/gallerynight26.github.io/`.
 4. Copiá el enlace de una canción.
 5. En **NFC Tools**: **Escribir → Añadir registro → URL/URI**. Pegá el enlace, validá y tocá **Escribir**.
 6. Acercá una etiqueta grabable al celular y esperá la confirmación. Dejá un único registro URL por etiqueta.
@@ -14,18 +14,18 @@ Guía oficial: https://www.wakdev.com/en/knowledge-base/how-to-guides/how-to-wri
 
 ## Enlaces a grabar
 
-Reemplazá `https://tu-sitio.com/` por la dirección real. No grabes el enlace de Spotify directamente: se saltearía el desbloqueo en la colección.
+Estos enlaces corresponden a la página publicada en GitHub Pages. No grabes el enlace de Spotify directamente: se saltearía el desbloqueo en la colección.
 
 | Canción | Enlace NFC |
 | --- | --- |
-| War Pigs | `https://tu-sitio.com/?nfc=war-pigs` |
-| Trátame suavemente | `https://tu-sitio.com/?nfc=tratame-suavemente` |
-| Té para tres | `https://tu-sitio.com/?nfc=te-para-tres` |
-| Sweet Child o’ Mine | `https://tu-sitio.com/?nfc=sweet-child` |
-| Ruta 66 | `https://tu-sitio.com/?nfc=ruta-66` |
-| Post-crucifixión | `https://tu-sitio.com/?nfc=post-crucifixion` |
-| I Was Made for Lovin’ You | `https://tu-sitio.com/?nfc=kiss` |
-| Take on Me | `https://tu-sitio.com/?nfc=take-on-me` |
+| War Pigs | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=war-pigs` |
+| Trátame suavemente | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=tratame-suavemente` |
+| Té para tres | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=te-para-tres` |
+| Sweet Child o’ Mine | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=sweet-child` |
+| Ruta 66 | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=ruta-66` |
+| Post-crucifixión | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=post-crucifixion` |
+| I Was Made for Lovin’ You | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=kiss` |
+| Take on Me | `https://benjaguerra192.github.io/gallerynight26.github.io/?nfc=take-on-me` |
 
 ## Qué pasa al escanear
 
