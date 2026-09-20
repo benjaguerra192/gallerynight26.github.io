@@ -1,0 +1,23 @@
+/* Efectos originales: entradas fade/slide, respuesta táctil y desbloqueo. */
+.viewer-controls{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto 24px;flex-wrap:wrap}.viewer-controls>span{font-size:10px;letter-spacing:1.5px;margin-right:6px}.viewer-controls button{min-height:44px;padding:10px 16px;border:2px solid var(--deep);background:var(--white);color:var(--green);font-weight:700;box-shadow:3px 3px 0 var(--deep)}.viewer-controls button[aria-pressed="true"]{background:var(--yellow);color:var(--deep)}
+.album-carousel.grid-view{display:block;width:100%;max-width:1120px}#album-carousel.grid-view .album-stage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;overflow:visible}#album-carousel.grid-view .card-body{padding:15px;min-height:185px}#album-carousel.grid-view .card h3{font-size:25px}#album-carousel.grid-view .locked-cover svg{width:64px;height:64px}#album-carousel.grid-view .locked-cover strong{font-size:12px}#album-carousel.grid-view .locked-cover span{font-size:11px}#album-carousel.grid-view .card-number{font-size:9px;padding:5px 7px}
+@media(max-width:750px){#album-carousel.grid-view .album-stage{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}#album-carousel.grid-view .card-body{padding:10px;min-height:180px}#album-carousel.grid-view .card h3{font-size:21px}#album-carousel.grid-view .artist{font-size:11px}#album-carousel.grid-view .locked-cover{gap:8px}#album-carousel.grid-view .locked-cover svg{width:44px;height:44px}#album-carousel.grid-view .locked-cover strong{font-size:8px;letter-spacing:.7px}#album-carousel.grid-view .locked-cover span{font-size:9px}#album-carousel.grid-view .card-meta{font-size:7px}#album-carousel.grid-view .card-number{font-size:7px;top:7px;left:7px}#album-carousel.grid-view .card-bottom button{font-size:12px}}
+:root{--ease-out:cubic-bezier(.22,1,.36,1);--motion-fast:160ms;--motion-normal:280ms}
+.primary,.quiet,.family-button,.album-arrow,.filters button,.card-bottom button,#site-navigation a{transition:transform var(--motion-fast) var(--ease-out),background-color var(--motion-fast),color var(--motion-fast),box-shadow var(--motion-fast),opacity var(--motion-fast)}
+button:not(:disabled):active,.primary:active{transform:translate(2px,2px) scale(.98);box-shadow:1px 1px 0 var(--deep)}
+.album-stage{overflow:clip;overflow-clip-margin:10px}.album-stage .card-body{min-height:190px}.album-stage .card h3{min-height:1.15em}.album-stage .album-cover{animation:cover-appear 260ms var(--ease-out) both}.album-stage .card-bottom button{border:2px solid var(--deep);box-shadow:3px 3px 0 var(--deep)}
+.page-section{scroll-margin-top:100px}.page-section:focus{outline:none}.browse-albums{margin:18px 0 0 15px;min-height:52px;background:var(--white)}
+.album-arrow{border-radius:4px}.album-arrow:focus-visible{outline:3px solid var(--white);outline-offset:4px}#progress{transition:width 450ms var(--ease-out)}
+#toast{transition:opacity 180ms,translate 180ms var(--ease-out);translate:0 10px}#toast.visible{translate:0 0}
+dialog[open]::backdrop{animation:backdrop-appear 180ms ease-out}dialog .close{transition:transform 160ms,background-color 160ms}dialog .close:hover{background:var(--white)}
+.family-button:hover{background:var(--white)}.family-button:focus-visible{outline-color:var(--red)}
+@keyframes cover-appear{from{opacity:0}to{opacity:1}}
+@keyframes backdrop-appear{from{opacity:0}to{opacity:1}}
+@media(hover:hover) and (pointer:fine){.album-arrow:hover{transform:translateY(-3px);box-shadow:4px 7px 0 var(--deep)}.card-bottom button:hover{transform:translateY(-2px)}#site-navigation a:hover{translate:0 -2px}}
+@media(max-width:1000px) and (orientation:portrait){
+ #site-navigation{display:flex;visibility:hidden;transform:translateX(-105%);transition:transform 300ms var(--ease-out),visibility 0s 300ms;pointer-events:none}
+ .menu-open #site-navigation{visibility:visible;transform:translateX(0);transition-delay:0s;pointer-events:auto}
+ #site-navigation a{translate:0 0}
+}
+@media(max-width:650px){.browse-albums{display:block;width:100%;margin:12px 0 0}.album-stage .card-body{min-height:195px}.album-stage .card h3{font-size:28px;line-height:1.12}.page-section{scroll-margin-top:80px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.menu-open #site-navigation,#site-navigation{transition:none!important}}

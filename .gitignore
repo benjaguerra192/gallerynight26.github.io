@@ -1,0 +1,13 @@
+/Audios/
+/Ejemplos para la pagina web/
+/Fotos de los albumes/
+/is-a-dev-register/
+/dist/
+/output/
+/.playwright-cli/
+/node_modules/
+/.netlify/
+.env
+.env.*
+!.env.example
+*.log
