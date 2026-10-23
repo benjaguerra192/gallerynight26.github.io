@@ -7,6 +7,7 @@
 #preview-home #preview-player { pointer-events:auto; margin:0 auto; }
 body:has(#preview-home #preview-player:not([hidden])) { padding-bottom:120px; }
 #song-dialog #preview-player { flex-wrap:wrap; text-align:left; }
+#song-detail .caption a { color:var(--green); text-underline-offset:3px; }
 .card[data-preview] { cursor:pointer; }
 .card[data-preview]:focus-visible { outline:4px solid #f6d535; outline-offset:4px; }
 @media(max-width:540px) { #preview-player { padding:10px; gap:8px; } #preview-title { font-size:13px; } #preview-toggle { padding:8px; } }

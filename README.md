@@ -16,11 +16,11 @@ Prueba local del paquete: `node build.cjs`, luego `python -m http.server 8765 --
 - El avance queda guardado en este navegador mediante localStorage.
 - **Reiniciar** pide confirmación y borra solo el avance de este demo.
 - Para NFC reales: publicá `index.html`, todos los archivos `.css`, `app.js`, `audio.js` y la carpeta `assets/` completa en un hosting HTTPS. En **Organización** (pie de página), ingresá la contraseña y copiá los enlaces. Instrucciones completas en [CONFIGURAR-NFC.md](CONFIGURAR-NFC.md).
-- Ejemplo: `https://tu-sitio.com/?nfc=war-pigs`. El teléfono abre la URL y la página desbloquea la canción. No se usa Web NFC.
+- Ejemplo: `https://tu-sitio.com/?nfc=billie-jean`. El teléfono abre la URL y la página desbloquea la canción. No se usa Web NFC.
 - Usá el mismo navegador y dominio en todos los escaneos. En incógnito, otro navegador o al borrar sus datos, la colección no se conserva. No hay sincronización entre dispositivos.
 - Los enlaces son compartibles. Esto es una experiencia de colección, no un control de acceso seguro.
 
-Catálogo editable en `app.js`: solo las ocho canciones con fotos aportadas. Estética ochentosa inspirada en los ejemplos, con verde, amarillo, blanco y rojo.
+Catálogo editable en `app.js`: ocho clásicos internacionales con portadas de sus álbumes. Estética ochentosa inspirada en los ejemplos, con verde, amarillo, blanco y rojo.
 
 Escudo escolar repetido en cabecera, panel del recorrido, tarjetas, detalle de canción y pie. Favicon SVG aportado por el usuario. Copias en `assets/`; originales conservados en `Ejemplos para la pagina web/`. Los afiches de referencia no se publican.
 
@@ -33,7 +33,7 @@ Fuentes de Google Fonts opcionales; hay alternativas locales si no hay Internet.
 - Al entrar por primera vez se pide nombre familiar. Se guarda localmente y puede editarse tocándolo en la cabecera. No es una cuenta ni sincroniza dispositivos.
 - Si la primera visita viene de un NFC, la canción se desbloquea después de ingresar el nombre.
 - Reiniciar está debajo de los álbumes: borra el recorrido y conserva el nombre.
-- Ocho canciones de la carpeta de fotos. Las seis originales se retiraron del catálogo. Sus enlaces antiguos ya no desbloquean canciones; los avances válidos se conservan. Fotos originales preservadas; tapas copiadas a `assets/albums/`.
+- Catálogo: Billie Jean, Take on Me, With or Without You, Sweet Dreams, Every Breath You Take, Bohemian Rhapsody, Sweet Child o’ Mine y La Isla Bonita. Los NFC anteriores tienen equivalencias documentadas en CONFIGURAR-NFC.md; los desbloqueos de las dos canciones que permanecen se conservan.
 - Una tapa bloqueada se oculta completamente tras un fondo gris y un candado. Aparece al desbloquearla.
 
 ## Transiciones
@@ -46,6 +46,8 @@ Verificación lógica: `node verify.cjs`. Incluye navegación, cambios rápidos 
 
 ## Fragmentos de audio
 
-`assets/audio/` contiene ocho MP3 de 30 segundos con entrada y salida suaves. Originales preservados en `Audios/`. `prepare-audio.py` define los puntos iniciales elegidos para riffs/estribillos; son una primera selección ajustable, no una medición de popularidad. Para cambiarlos, editar los segundos y ejecutar `python prepare-audio.py` (requiere FFmpeg).
+`assets/audio/` contiene ocho previews MP3 públicos de aproximadamente 30 segundos proporcionados por Deezer. Portadas de los álbumes en `assets/albums/`; procedencia y fecha en `assets/media-sources.json`. El diálogo incluye un enlace a Deezer. Son previews, no canciones completas; el fragmento lo elige el proveedor. Los originales aportados permanecen en `Audios/`, fuera del repositorio.
+
+Para refrescar los previews: `python prepare-audio.py` (Python estándar, conexión a Internet). Las URLs temporales se consultan a Deezer al ejecutar el script y no se usan en la reproducción del sitio.
 
 Un reproductor compartido evita superposición. Pausa/Reproducir disponible en el diálogo y debajo del visor. Carrusel: reproduce al cambiar a una canción desbloqueada. Cuadrícula: mouse, teclado o toque en celular. Cambiar sección, esconder pestaña o reiniciar detiene la reproducción. Las canciones bloqueadas no se reproducen desde el visor.

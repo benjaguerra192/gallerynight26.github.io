@@ -21,21 +21,22 @@ assert.equal(app.run("setFamily('GonzÃ¡lez')"),true);
 assert.equal(app.nodes.get('#family-display').textContent,'GonzÃ¡lez');
 assert.equal(app.nodes.get('#family-dialog').open,false);
 assert.equal(app.run('songs.length'),8);
+assert.deepEqual(Array.from(app.run('songs.map(s=>s.id)')),['billie-jean','take-on-me','with-or-without-you','sweet-dreams','every-breath-you-take','bohemian-rhapsody','sweet-child','la-isla-bonita']);
 assert.equal(app.run('songs.filter(s=>s.cover).length'),8);
 assert.equal(app.nodes.get('#songs').innerHTML.includes('album-cover'),false);
 assert.equal(app.nodes.get('#songs').innerHTML.includes('locked-cover'),true);
-app.run("unlock('war-pigs')");assert.equal(app.run('unlocked.size'),1);
-app.run("unlock('war-pigs')");assert.equal(app.run('unlocked.size'),1);
-app = boot('?nfc=tratame-suavemente');assert.equal(app.run('unlocked.size'),2);assert.equal(app.run('location.search'),'');
+app.run("unlock('billie-jean')");assert.equal(app.run('unlocked.size'),1);
+app.run("unlock('billie-jean')");assert.equal(app.run('unlocked.size'),1);
+app = boot('?nfc=take-on-me');assert.equal(app.run('unlocked.size'),2);assert.equal(app.run('location.search'),'');
 app.run("unlock('invalid')");assert.equal(app.run('unlocked.size'),2);
-app.run("unlock('war-pigs')");assert.equal(app.nodes.get('#songs').innerHTML.includes('assets/albums/work_pigs.jpg'),true);
+app.run("unlock('billie-jean')");assert.equal(app.nodes.get('#songs').innerHTML.includes('assets/albums/billie-jean.jpg'),true);
 app.run('songs.forEach(s=>unlock(s.id))');assert.equal(app.run('unlocked.size'),8);
 for(const file of app.run('songs.filter(s=>s.cover).map(s=>s.cover)'))assert.ok(fs.existsSync('assets/albums/'+file),file);
 app.nodes.get('#confirm-reset').handlers.click();assert.equal(app.run('unlocked.size'),0);
 app = boot();assert.equal(app.run('unlocked.size'),0);
 assert.equal(app.run('familyName'),'GonzÃ¡lez');
 saved.set('en-frecuencia:v1','{invalid');app=boot();assert.equal(app.run('unlocked.size'),0);
-saved.set('en-frecuencia:v1','["invalid","soda","war-pigs","war-pigs"]');app=boot();assert.equal(app.run('unlocked.size'),1);
+saved.set('en-frecuencia:v1','["invalid","soda","billie-jean","billie-jean"]');app=boot();assert.equal(app.run('unlocked.size'),1);
 assert.equal(app.run("unlock('soda')"),false);
 app.run('albumIndex=0;moveAlbum(-1)');assert.equal(app.run('albumIndex'),7);
 app.run('moveAlbum(1)');assert.equal(app.run('albumIndex'),0);
@@ -88,10 +89,10 @@ app.run("setAlbumView('carousel')");assert.equal((app.nodes.get('#songs').innerH
 assert.equal(app.nodes.get('#album-prev').hidden,false);
 assert.equal(app.nodes.get('#view-carousel').attributes['aria-pressed'],'true');
 // Playback transitions with a mocked media element (browser policy needs phone testing).
-app.run("$('#song-dialog').close();filter='all';unlocked=new Set(['war-pigs','tratame-suavemente']);albumIndex=0;navigateTo('albumes');render()");
-assert.equal(app.run('previewSong.id'),'war-pigs');
+app.run("$('#song-dialog').close();filter='all';unlocked=new Set(['billie-jean','take-on-me']);albumIndex=0;navigateTo('albumes');render()");
+assert.equal(app.run('previewSong.id'),'billie-jean');
 app.run('pausePreview();render()');assert.equal(app.run('previewAudio.paused'),true);
-app.run('moveAlbum(1)');assert.equal(app.run('previewSong.id'),'tratame-suavemente');
+app.run('moveAlbum(1)');assert.equal(app.run('previewSong.id'),'take-on-me');
 assert.equal(app.run('previewAudio.paused'),false);
 app.run('moveAlbum(1)');assert.equal(app.run('previewSong'),null);assert.equal(app.run('previewAudio.paused'),true);
 app.run("setAlbumView('grid')");assert.equal(app.run('previewSong'),null);
@@ -99,6 +100,16 @@ app.run("playPreview(songs[0]);navigateTo('guia')");assert.equal(app.run('previe
 app.run("playPreview(songs[0])");app.nodes.get('#confirm-reset').handlers.click();assert.equal(app.run('previewSong'),null);
 for(const id of app.run('songs.map(s=>s.id)'))assert.ok(fs.statSync('assets/audio/'+id+'.mp3').size>1000);
 console.log('OK: audio switching, pause, locked tracks, reset, NFC popup, views, family and admin.');
+// Existing NFC labels still work; removed-song progress must not unlock replacements.
+saved.set('en-frecuencia:v1',JSON.stringify(['war-pigs','tratame-suavemente','kiss','sweet-child','take-on-me']));
+app=boot();assert.equal(app.run('unlocked.size'),2);
+for(const [legacy,current] of Object.entries(app.run('legacyNfc'))){
+ assert.equal(app.run('unlocked.has('+JSON.stringify(current)+')'),false);
+ app.run('unlock('+JSON.stringify(legacy)+')');
+ assert.equal(app.run('unlocked.has('+JSON.stringify(current)+')'),true);
+ assert.equal(app.run('previewSong.id'),current);
+}
+assert.equal(app.run('unlocked.size'),8);
 (async()=>{
  await app.run("previewAudio.play=()=>Promise.reject(Object.assign(new Error('blocked'),{name:'NotAllowedError'}));playPreview(songs[0],true)");
  assert.equal(app.run('previewState'),'paused');

@@ -1,0 +1,90 @@
+[
+  {
+    "id": "billie-jean",
+    "title": "Billie Jean",
+    "artist": "Michael Jackson",
+    "album": "Thriller",
+    "source": "https://www.deezer.com/track/831313",
+    "metadata": "https://api.deezer.com/track/831313",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/f01e09ceb8ad1e96707c1b4aadb5911b/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  },
+  {
+    "id": "take-on-me",
+    "title": "Take on Me",
+    "artist": "a-ha",
+    "album": "Hunting High and Low",
+    "source": "https://www.deezer.com/track/664107",
+    "metadata": "https://api.deezer.com/track/664107",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/e0ce8977ab98d73bcea00fc838ece034/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  },
+  {
+    "id": "with-or-without-you",
+    "title": "With Or Without You (Remastered 2007)",
+    "artist": "U2",
+    "album": "The Joshua Tree",
+    "source": "https://www.deezer.com/track/912486",
+    "metadata": "https://api.deezer.com/track/912486",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/b255afa51b3c1af7872acb56da319c2d/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  },
+  {
+    "id": "sweet-dreams",
+    "title": "Sweet Dreams (Are Made of This) (2005 Remaster)",
+    "artist": "Eurythmics",
+    "album": "Sweet Dreams (Are Made Of This)",
+    "source": "https://www.deezer.com/track/561836",
+    "metadata": "https://api.deezer.com/track/561836",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/364f0d4ea4b5452b59e6664b9e5480f0/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  },
+  {
+    "id": "every-breath-you-take",
+    "title": "Every Breath You Take",
+    "artist": "The Police",
+    "album": "Synchronicity (Remastered 2003)",
+    "source": "https://www.deezer.com/track/665714262",
+    "metadata": "https://api.deezer.com/track/665714262",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/e9d3dbc325eebdaf6bc442c2f9a05daa/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  },
+  {
+    "id": "bohemian-rhapsody",
+    "title": "Bohemian Rhapsody",
+    "artist": "Queen",
+    "album": "A Night At The Opera",
+    "source": "https://www.deezer.com/track/4091937401",
+    "metadata": "https://api.deezer.com/track/4091937401",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/0b56f4eee05fa1ea753c5654b2cdb70c/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  },
+  {
+    "id": "sweet-child",
+    "title": "Sweet Child O' Mine",
+    "artist": "Guns N' Roses",
+    "album": "Appetite For Destruction (Super Deluxe Edition)",
+    "source": "https://www.deezer.com/track/518458172",
+    "metadata": "https://api.deezer.com/track/518458172",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/8bfe7b3b0985d9ff0751090fb2b6f73f/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  },
+  {
+    "id": "la-isla-bonita",
+    "title": "La Isla Bonita",
+    "artist": "Madonna",
+    "album": "True Blue",
+    "source": "https://www.deezer.com/track/678372",
+    "metadata": "https://api.deezer.com/track/678372",
+    "coverSource": "https://cdn-images.dzcdn.net/images/cover/43a8e2b1b035391f58b0927cf1040bc4/500x500-000000-80-0-0.jpg",
+    "audioSource": "Public 30-second MP3 preview provided by Deezer",
+    "retrieved": "2026-10-23"
+  }
+]
