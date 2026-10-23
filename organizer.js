@@ -47,6 +47,7 @@ function renderOrganizer(snapshot) {
     }).join('');
     return '<details class="participant-row" data-participant="'+p.id+'" '+(expanded.has(p.id)?'open':'')+'><summary><span class="rank">'+place+'</span><span class="participant-name">'+escapeHtml(p.name)+'<small>'+completed+'</small></span><span class="participant-score">'+p.unlocks.length+'/8<small>'+elapsed+'</small></span></summary><div class="participant-detail"><p>Registro: '+dateText(p.registered_at)+'<br>Finalización: '+dateText(p.completed_at)+'</p><ul>'+tracks+'</ul>'+actions+'</div></details>';
   }).join('') : '<p class="empty-leaderboard">Todavía no hay participantes registrados.</p>';
+  $('#organizer-grid').innerHTML = participantGrid(participants, true);
   updateLeaderboardTimes();
 }
 async function refreshOrganizer() {
@@ -74,7 +75,7 @@ async function loginOrganizer(password) {
   finally { $('#admin-form button').disabled = false; }
 }
 async function logoutOrganizer() {
-  try { await cloud.logout(); adminUnlocked = false; organizerSnapshot = null; $('#leaderboard').replaceChildren(); renderLinks(); navigateTo('inicio'); }
+  try { await cloud.logout(); adminUnlocked = false; organizerSnapshot = null; $('#leaderboard').replaceChildren(); $('#organizer-grid').replaceChildren(); renderLinks(); navigateTo('inicio'); }
   catch (error) { notify('No se pudo cerrar la sesión: ' + error.message); }
 }
 async function unlockAllRemote() {

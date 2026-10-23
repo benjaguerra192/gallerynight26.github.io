@@ -103,7 +103,7 @@ let touchStart=null;
 $('#album-carousel').addEventListener('touchstart',e=>{touchStart=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null},{passive:true});
 $('#album-carousel').addEventListener('touchend',e=>{if(!touchStart)return;const dx=e.changedTouches[0].clientX-touchStart.x,dy=e.changedTouches[0].clientY-touchStart.y;touchStart=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)moveAlbum(dx<0?1:-1)},{passive:true});
 $('#album-carousel').addEventListener('touchcancel',()=>{touchStart=null});
-const sectionIds=['inicio','albumes','guia','etiquetas'];
+const sectionIds=['inicio','albumes','guia','ranking','etiquetas'];
 function setMenu(open){document.body.classList.toggle('menu-open',open);$('#menu-toggle').setAttribute('aria-expanded',String(open));$('#menu-backdrop').hidden=!open;$('#site-navigation').inert=portraitMedia.matches&&!open;if(open){animateUI($('#menu-backdrop'),[{opacity:0},{opacity:1}],220);$('#site-navigation a').focus()}}
 let currentSection='';
 function selectSection(id){if(!sectionIds.includes(id))id='inicio';if(id==='etiquetas'&&!adminUnlocked){id='inicio';openDialog($('#admin-dialog'));}const changed=currentSection!==id;currentSection=id;if(id!=='albumes')pausePreview(true);else if(changed)syncAlbumAudio();document.querySelectorAll('.page-section').forEach(panel=>{panel.hidden=panel.id!==id;if(!panel.hidden&&changed)animateUI(panel,[{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'translateY(0)'}],320)});document.querySelectorAll('[data-section]').forEach(link=>{if(link.dataset.section===id)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current')});setMenu(false);return id}

@@ -39,6 +39,7 @@
       const { error } = await admin.auth.signOut({ scope: 'local' });
       if (error) throw error;
     },
+    leaderboard: () => rpc(participant, 'gn_leaderboard'),
     snapshot: () => rpc(admin, 'gn_admin_snapshot'),
     event: (mode, opens, closes) => rpc(admin, 'gn_admin_event', { event_mode: mode, open_time: opens, close_time: closes }),
     action: (action, target = null, track = null, confirmed = false) => rpc(admin, 'gn_admin_action', {

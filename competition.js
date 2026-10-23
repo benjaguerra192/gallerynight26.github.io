@@ -97,7 +97,8 @@ async function startCompetition() {
   $('#reset').hidden = true;
   await refreshCompetition();
   await restoreOrganizer();
-  if (!participantRecord && !adminUnlocked && eventStatus?.is_open && !$('#admin-dialog').open) openDialog($('#family-dialog'));
+  refreshPublicLeaderboard();
+  if (!participantRecord && !adminUnlocked && currentSection !== 'ranking' && eventStatus?.is_open && !$('#admin-dialog').open) openDialog($('#family-dialog'));
   await consumeRemoteLink();
   setInterval(refreshCompetition, 15000);
   setInterval(() => { renderCompetition(); updateLeaderboardTimes(); }, 1000);

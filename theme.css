@@ -1,0 +1,27 @@
+/* Follow the device theme, including changes while the page is open. */
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme:dark; --surface:#15291f; --ink:#fffef7; --muted:#c1d1c6; --line:#577b64; }
+  body { background-color:#071910; }
+  body::before { background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px),linear-gradient(#071910eb,#041109f2),url('assets/fondo-paginaweb.png'); }
+  header, footer, #site-navigation, .card, details, .admin-panel, .filters, .public-standing { background:var(--surface); color:var(--ink); }
+  .brand, .nav-heading, footer span:first-child, summary, details label, .admin-panel h3, .progress-panel, .progress-panel p, .panel-footer, .card-meta, .song-art, dialog, dialog p, .nfc-row a, #song-detail .caption a { color:var(--ink); }
+  .count span:first-child { color:var(--yellow); }
+  .count span:last-child { color:#ff7e8b; }
+  .card-bottom, .artist { color:var(--muted); }
+  #site-navigation a { color:var(--ink); }
+  #site-navigation a:hover { background:var(--yellow); color:var(--deep); }
+  #site-navigation a[aria-current="page"] { background:var(--yellow); color:var(--deep); }
+  .quiet, .viewer-controls button { background:#203c2c; color:var(--ink); border-color:#64836f; }
+  .quiet:hover, .viewer-controls button[aria-pressed="true"] { background:var(--yellow); color:var(--deep); }
+  .family-button:hover { background:#fff09a; }
+  .filters button { color:var(--ink); }
+  .filters button.active { background:var(--yellow); color:var(--deep); }
+  input, .admin-panel select { background:#0c1e14; color:var(--ink); border-color:#729b80; }
+  .locked-cover, .card.locked .art { background:#303a34; color:#d8dfda; }
+  #family-error, #leaderboard-error, #public-error { color:#ff96a2; }
+  .standings-table th, .standings-table td { border-color:#577b64; }
+  .standings-table thead { background:#244b33; color:var(--ink); }
+  .standings-table .song-found { background:#244b33; color:#fff09a; }
+  .standings-table .song-missing { color:#bbc9c0; }
+  button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline-color:var(--yellow); }
+}

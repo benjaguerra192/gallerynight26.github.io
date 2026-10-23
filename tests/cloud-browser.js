@@ -11,6 +11,7 @@ async page => {
     window.galleryCloud={me:async()=>me(),restoreAdmin:async()=>state.admin?snapshot():null,
       register:async name=>{if(!state.event.is_open)throw new Error('El recorrido está cerrado.'); const p=state.participants.find(p=>p.id==='c');p.name=name;save();return me()},
       unlock:async id=>{if(!state.event.is_open)throw new Error('El recorrido está cerrado.');const p=me().participant;if(!p.unlocks.some(u=>u.song_id===id))p.unlocks.push({song_id:id,unlocked_at:new Date().toISOString()});save();return me()},
+      leaderboard:async()=>({server_now:new Date().toISOString(),participants:state.participants.map(({id,registered_at,...p})=>({...p,unlocks:p.unlocks.map(({song_id})=>({song_id}))}))}),
       login:async()=>{state.admin=true;save();return snapshot()},logout:async()=>{state.admin=false;save()},snapshot:async()=>snapshot(),
       event:async(mode,opens_at,closes_at)=>{state.event={mode,opens_at,closes_at,is_open:mode==='open'};save();return snapshot()},
       action:async(action,target,track,confirmed)=>{state.actions++;const p=state.participants.find(p=>p.id===target);if(action!=='unlock_all'&&!confirmed)throw new Error('Missing confirmation');if(action==='delete_unlock'){p.unlocks=p.unlocks.filter(u=>u.song_id!==track);p.completed_at=null;}else if(action==='clear_unlocks'){p.unlocks=[];p.completed_at=null;}else if(action==='delete_participant'){state.participants=state.participants.filter(p=>p.id!==target);}else if(action==='delete_all'){state.participants=[];}else if(action==='restart'){p.unlocks=[];p.registered_at=new Date().toISOString();p.completed_at=null;p.is_test=false;}else if(action==='unlock_all'){p.unlocks=tracks.map(song_id=>({song_id,unlocked_at:new Date().toISOString()}));p.is_test=true;p.completed_at=new Date().toISOString();}save();return snapshot();}
@@ -28,6 +29,10 @@ async page => {
   const ranks=await page.locator('.participant-row summary').allTextContents();
   if(!ranks[0].includes('Familia rápida')||!ranks[0].includes('#1')||!ranks.at(-1).includes('SIN PREMIO'))throw new Error('Incorrect leaderboard order');
   if(await page.locator('#leaderboard img').count())throw new Error('Participant name rendered as HTML');
+  await page.getByRole('group',{name:'Vista de participantes',exact:true}).getByRole('button',{name:'Grilla',exact:true}).click();
+  if(await page.locator('#organizer-grid tbody tr').count()!==4)throw new Error('Missing admin grid participants');
+  if(await page.locator('#organizer-grid tbody tr').first().locator('td.song-found').count()!==8)throw new Error('Missing grid unlocks');
+  await page.getByRole('group',{name:'Vista de participantes',exact:true}).getByRole('button',{name:'Leaderboard',exact:true}).click();
   await page.locator('.participant-row[data-participant="c"] summary').click();
   await page.evaluate(()=>window.__cloudTest.confirmAnswer=false);
   await page.locator('[data-admin-action="delete_unlock"][data-target="c"]').first().click();
@@ -53,7 +58,7 @@ async page => {
   await page.getByText('Leaderboard en vivo',{exact:true}).waitFor({state:'visible'});
   if(await page.locator('dialog[open]').count())throw new Error('Remembered admin was asked to sign in');
   const widths=[];
-  for(const width of [320,390,844]){
+  for(const width of [320,390,844,1024,1280]){
     await page.setViewportSize({width,height:width===844?390:844});
     widths.push(await page.evaluate(()=>({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth})));
   }
@@ -62,7 +67,29 @@ async page => {
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('#site-navigation')).visibility==='hidden');
   await page.screenshot({path:'output/playwright/competition-admin.png',fullPage:true});
   await page.getByRole('button',{name:'Cerrar sesión',exact:true}).click();
+  await page.goto('http://127.0.0.1:8770/#ranking');
+  await page.locator('#public-list .public-standing').first().waitFor();
+  if(await page.locator('#public-results [data-admin-action]').count())throw new Error('Public ranking contains admin actions');
+  if(await page.locator('#public-list img').count())throw new Error('Public name rendered as HTML');
+  if(!(await page.locator('#public-list .public-standing').first().textContent()).includes('Familia rápida'))throw new Error('Public order differs');
+  await page.getByRole('group',{name:'Vista del ranking público',exact:true}).getByRole('button',{name:'Grilla',exact:true}).click();
+  if(await page.locator('#public-grid tbody tr').count()!==4)throw new Error('Missing public grid');
+  for(const width of [320,390,844]){
+    await page.setViewportSize({width,height:width===844?390:844});
+    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Grid causes page overflow');
+  }
+  await page.emulateMedia({colorScheme:'light'});
+  const light=await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor);
+  await page.emulateMedia({colorScheme:'dark'});
+  const dark=await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor);
+  if(light===dark)throw new Error('Device theme did not change panel');
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(()=>scrollTo(0,0));
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#site-navigation')).visibility==='hidden');
+  await page.screenshot({path:'output/playwright/ranking-dark.png',fullPage:true});
+  await page.emulateMedia({colorScheme:'light'});
+  if(await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor)!==light)throw new Error('Theme did not return to light');
   await page.getByRole('button',{name:'Organización',exact:true}).click();
   await page.getByRole('heading',{name:'Acceso a etiquetas NFC',exact:true}).waitFor({state:'visible'});
-  return {leaderboard:'ranked correctly',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
+  return {leaderboard:'public read-only; admin protected',grid:'public and admin verified',theme:'light, dark and live changes verified',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
 }

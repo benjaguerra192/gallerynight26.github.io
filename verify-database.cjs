@@ -23,7 +23,7 @@ async function denied(action) { await assert.rejects(action, /permission denied|
     create table auth.users(id uuid primary key);
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
     grant usage on schema public,auth to anon,authenticated;`);
-  await db.exec(fs.readFileSync('supabase/migrations/202610230001_competition.sql','utf8'));
+  for(const migration of fs.readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort()) await db.exec(fs.readFileSync('supabase/migrations/'+migration,'utf8'));
   for (const id of Object.values(ids)) await db.query('insert into auth.users values($1)',[id]);
   await db.query('insert into public.gn_admins values($1)',[ids.admin]);
 
@@ -83,6 +83,22 @@ async function denied(action) { await assert.rejects(action, /permission denied|
   const completed = state.participant.completed_at;
   state=await call('gn_unlock',[tracks[7]]);
   assert.equal(state.participant.completed_at,completed);
+
+  await identity(null,'anon');
+  const publicBoard=await call('gn_leaderboard');
+  assert.equal(publicBoard.participants.length,2);
+  const publicPerson=publicBoard.participants.find(p=>p.name==='Otro nombre');
+  assert.equal(publicPerson.unlocks.length,8);
+  assert.ok(publicPerson.completed_at);
+  assert.ok(publicPerson.elapsed_ms>0);
+  assert.equal(Object.hasOwn(publicPerson,'id'),false);
+  assert.equal(Object.hasOwn(publicPerson,'registered_at'),false);
+  assert.deepEqual(Object.keys(publicPerson.unlocks[0]),['song_id']);
+  await denied(()=>call('gn_admin_action',['delete_all',null,null,'BORRAR']));
+  await denied(()=>db.query('delete from public.gn_participants'));
+  await identity(ids.bob);
+  assert.equal((await call('gn_leaderboard')).participants.length,2);
+  await denied(()=>call('gn_admin_action',['delete_all',null,null,'BORRAR']));
 
   await identity(ids.admin);
   snapshot=await call('gn_admin_snapshot');
