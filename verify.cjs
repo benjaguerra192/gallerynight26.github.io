@@ -110,6 +110,26 @@ for(const [legacy,current] of Object.entries(app.run('legacyNfc'))){
  assert.equal(app.run('previewSong.id'),current);
 }
 assert.equal(app.run('unlocked.size'),8);
+(function verifyOrganizerUnlockAll(){
+ saved.set('en-frecuencia:v1','[]');
+ app=boot();
+ const family=app.run('familyName');
+ app.nodes.get('#admin-unlock-all').handlers.click();
+ assert.equal(app.run('unlocked.size'),0);
+ app.run("authorizeAdmin('nadielaadivina')");
+ app.nodes.get('#admin-unlock-all').handlers.click();
+ assert.equal(app.run('unlocked.size'),8);
+ assert.equal(app.nodes.get('#count').textContent,'08');
+ assert.equal(app.nodes.get('#progress').style.width,'100%');
+ assert.equal(app.run('currentSection'),'etiquetas');
+ app=boot();
+ assert.equal(app.run('unlocked.size'),8);
+ assert.equal(app.run('adminUnlocked'),false);
+ assert.equal(app.run('familyName'),family);
+ app.nodes.get('#confirm-reset').handlers.click();
+ assert.equal(app.run('unlocked.size'),0);
+ console.log('OK: organizer unlock-all requires access, persists, and can be reset.');
+})();
 (async()=>{
  await app.run("previewAudio.play=()=>Promise.reject(Object.assign(new Error('blocked'),{name:'NotAllowedError'}));playPreview(songs[0],true)");
  assert.equal(app.run('previewState'),'paused');

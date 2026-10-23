@@ -53,3 +53,7 @@ No hace falta regrabar las etiquetas existentes. Las canciones que siguen en el 
 | `kiss` | La Isla Bonita |
 
 El avance de canciones retiradas se descarta; Take on Me y Sweet Child o’ Mine conservan su desbloqueo. Actualizá los rótulos físicos si tenían los títulos anteriores.
+
+## Desbloqueo desde Organización
+
+Entrá con la contraseña y tocá **Desbloquear todas las canciones**. Se guardan las ocho como desbloqueadas en ese navegador; podés verlas en Álbumes. **Reiniciar recorrido** vuelve a bloquearlas.

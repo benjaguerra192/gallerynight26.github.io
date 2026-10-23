@@ -136,6 +136,7 @@ function authorizeAdmin(password){if(password!=='nadielaadivina'){$('#admin-erro
 $('#admin-open').addEventListener('click',()=>{if(adminUnlocked){navigateTo('etiquetas');return}$('#admin-error').textContent='';$('#admin-password').value='';openDialog($('#admin-dialog'))});
 $('#admin-form').addEventListener('submit',e=>{e.preventDefault();authorizeAdmin($('#admin-password').value)});
 $('#admin-lock').addEventListener('click',()=>{adminUnlocked=false;renderLinks();navigateTo('inicio')});
+$('#admin-unlock-all').addEventListener('click',()=>{if(!adminUnlocked)return;unlocked=new Set(songs.map(s=>s.id));const saved=save();render();if(saved)notify('Las 8 canciones están desbloqueadas en este navegador.');});
 
 function syncAlbumAudio(){
  if($('#song-dialog').open)return;
