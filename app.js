@@ -10,6 +10,7 @@ const songs = [
 ];
 // Las etiquetas ya grabadas conservan una canción asignada; el avance viejo no desbloquea las nuevas.
 const legacyNfc={'war-pigs':'billie-jean','tratame-suavemente':'with-or-without-you','te-para-tres':'sweet-dreams','ruta-66':'every-breath-you-take','post-crucifixion':'bohemian-rhapsody','kiss':'la-isla-bonita'};
+const cloud=window.galleryCloud;
 const key='en-frecuencia:v1';
 const $=s=>document.querySelector(s);
 let unlocked=new Set(),filter='all',toastTimer,albumIndex=0,adminUnlocked=false;
@@ -80,17 +81,17 @@ function showSong(song,already=false){
  playPreview(song);
  if(!already)animateUI($('#song-detail .detail-cover'),[{opacity:.2,transform:'scale(.9) rotate(-3deg)'},{opacity:1,transform:'scale(1.025) rotate(1deg)',offset:.75},{opacity:1,transform:'scale(1) rotate(0)'}],460);
 }
-function unlock(id){id=Object.hasOwn(legacyNfc,id)?legacyNfc[id]:id;if(!familyName){openDialog($('#family-dialog'));return false}const song=songs.find(s=>s.id===id);if(!song){notify('Este NFC no corresponde a una canción del recorrido.');return false}const already=unlocked.has(id);unlocked.add(id);save();albumIndex=visibleSongs().findIndex(s=>s.id===id);navigateTo('albumes');render();revealAlbum();showSong(song,already);return true}
-function consumeLink(){if(!familyName)return;const params=new URLSearchParams(location.search);if(!params.has('nfc'))return;const id=params.get('nfc');params.delete('nfc');try{history.replaceState(null,'',location.pathname+(params.size?'?'+params:'')+location.hash)}catch{}unlock(id)}
+function unlock(id){id=Object.hasOwn(legacyNfc,id)?legacyNfc[id]:id;if(cloud)return unlockRemote(id);if(!familyName){openDialog($('#family-dialog'));return false}const song=songs.find(s=>s.id===id);if(!song){notify('Este NFC no corresponde a una canción del recorrido.');return false}const already=unlocked.has(id);unlocked.add(id);save();albumIndex=visibleSongs().findIndex(s=>s.id===id);navigateTo('albumes');render();revealAlbum();showSong(song,already);return true}
+function consumeLink(){if(cloud){consumeRemoteLink();return}if(!familyName)return;const params=new URLSearchParams(location.search);if(!params.has('nfc'))return;const id=params.get('nfc');params.delete('nfc');try{history.replaceState(null,'',location.pathname+(params.size?'?'+params:'')+location.hash)}catch{}unlock(id)}
 function linkBase(){const custom=$('#base-url').value.trim();try{const url=new URL(custom||location.href);if(custom&&url.protocol!=='https:')return null;url.search='';url.hash='';return url}catch{return null}}
 function renderLinks(){if(!adminUnlocked){$('#nfc-links').replaceChildren();return}const base=linkBase();$('#nfc-links').replaceChildren();if(!base){$('#nfc-links').textContent='Ingresá una dirección HTTPS válida.';return}songs.forEach(s=>{const url=new URL(base);url.searchParams.set('nfc',s.id);const row=document.createElement('div');row.className='nfc-row';const info=document.createElement('div');const name=document.createElement('strong');name.textContent=s.artist+' — '+s.title;const link=document.createElement('a');link.href=url.href;link.textContent=url.href;info.append(name,link);const button=document.createElement('button');button.className='quiet';button.textContent='Copiar';button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(url.href);notify('Enlace copiado.')}catch{const range=document.createRange();range.selectNodeContents(link);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);notify('Enlace seleccionado. Copialo manualmente.')}});row.append(info,button);$('#nfc-links').append(row)})}
 $('#songs').addEventListener('click',e=>{const button=e.target.closest('[data-song]');if(button&&unlocked.has(button.dataset.song))showSong(songs.find(s=>s.id===button.dataset.song),true)});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
 $('#reset').addEventListener('click',()=>openDialog($('#reset-dialog')));
-$('#confirm-reset').addEventListener('click',()=>{pausePreview(true);unlocked.clear();const saved=save();filter='all';albumIndex=0;document.querySelectorAll('[data-filter]').forEach(b=>{const active=b.dataset.filter===filter;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});$('#reset-dialog').close();render();if(saved)notify('Recorrido reiniciado. Volvé a descubrir las canciones.');});
+$('#confirm-reset').addEventListener('click',()=>{if(cloud){notify('Los reinicios de la competencia se gestionan desde Organización.');return}pausePreview(true);unlocked.clear();const saved=save();filter='all';albumIndex=0;document.querySelectorAll('[data-filter]').forEach(b=>{const active=b.dataset.filter===filter;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});$('#reset-dialog').close();render();if(saved)notify('Recorrido reiniciado. Volvé a descubrir las canciones.');});
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;albumIndex=0;document.querySelectorAll('[data-filter]').forEach(x=>{const active=x===b;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active))});render()}));
 $('#base-url').addEventListener('input',renderLinks);
-window.addEventListener('storage',e=>{if(e.key===key||e.key===null){unlocked=readProgress();render();if($('#song-dialog').open)$('#song-dialog').close()}});
+window.addEventListener('storage',e=>{if(cloud){refreshCompetition();return}if(e.key===key||e.key===null){unlocked=readProgress();render();if($('#song-dialog').open)$('#song-dialog').close()}});
 window.addEventListener('popstate',consumeLink);
 
 function visibleSongs(){return songs.filter(s=>filter==='all'||unlocked.has(s.id))}
@@ -122,21 +123,21 @@ selectSection(location.hash.slice(1));
 
 const familyKey='gallery-night:family:v1';
 function readFamily(){try{return (localStorage.getItem(familyKey)||'').trim().slice(0,40)}catch{return ''}}
-let familyName=readFamily();
+let familyName=cloud?'':readFamily();
 function renderFamily(){$('#family-display').textContent=familyName||'Tu familia';$('#family-button').setAttribute('aria-label','Cambiar nombre de la familia '+familyName)}
-function setFamily(value){const name=value.trim().replace(/\s+/g,' ');if(!name||name.length>40){$('#family-error').textContent='Escribí un nombre de hasta 40 caracteres.';return false}familyName=name;try{localStorage.setItem(familyKey,name)}catch{notify('El nombre se conservará solo mientras esta página esté abierta.')}renderFamily();$('#family-error').textContent='';$('#family-dialog').close();consumeLink();return true}
+function setFamily(value){if(cloud)return registerFamily(value);const name=value.trim().replace(/\s+/g,' ');if(!name||name.length>40){$('#family-error').textContent='Escribí un nombre de hasta 40 caracteres.';return false}familyName=name;try{localStorage.setItem(familyKey,name)}catch{notify('El nombre se conservará solo mientras esta página esté abierta.')}renderFamily();$('#family-error').textContent='';$('#family-dialog').close();consumeLink();return true}
 $('#family-form').addEventListener('submit',e=>{e.preventDefault();setFamily($('#family-name').value)});
-$('#family-dialog').addEventListener('cancel',e=>{if(!familyName)e.preventDefault()});
+$('#family-dialog').addEventListener('cancel',e=>{if(!familyName&&!cloud)e.preventDefault()});
 $('#family-button').addEventListener('click',()=>{$('#family-name').value=familyName;$('#family-error').textContent='';openDialog($('#family-dialog'))});
 renderFamily();
-unlocked=readProgress();render();renderLinks();if(familyName)consumeLink();else openDialog($('#family-dialog'));
+unlocked=cloud?new Set():readProgress();render();renderLinks();if(!cloud){if(familyName)consumeLink();else openDialog($('#family-dialog'))}
 
 // Acceso de cortesía del sitio estático; no es autenticación de servidor.
-function authorizeAdmin(password){if(password!=='nadielaadivina'){$('#admin-error').textContent='Contraseña incorrecta.';return false}adminUnlocked=true;$('#admin-password').value='';$('#admin-error').textContent='';$('#admin-dialog').close();renderLinks();navigateTo('etiquetas');return true}
+function authorizeAdmin(password){if(cloud)return loginOrganizer(password);if(password!=='nadielaadivina'){$('#admin-error').textContent='Contraseña incorrecta.';return false}adminUnlocked=true;$('#admin-password').value='';$('#admin-error').textContent='';$('#admin-dialog').close();renderLinks();navigateTo('etiquetas');return true}
 $('#admin-open').addEventListener('click',()=>{if(adminUnlocked){navigateTo('etiquetas');return}$('#admin-error').textContent='';$('#admin-password').value='';openDialog($('#admin-dialog'))});
 $('#admin-form').addEventListener('submit',e=>{e.preventDefault();authorizeAdmin($('#admin-password').value)});
-$('#admin-lock').addEventListener('click',()=>{adminUnlocked=false;renderLinks();navigateTo('inicio')});
-$('#admin-unlock-all').addEventListener('click',()=>{if(!adminUnlocked)return;unlocked=new Set(songs.map(s=>s.id));const saved=save();render();if(saved)notify('Las 8 canciones están desbloqueadas en este navegador.');});
+$('#admin-lock').addEventListener('click',()=>{if(cloud){logoutOrganizer();return}adminUnlocked=false;renderLinks();navigateTo('inicio')});
+$('#admin-unlock-all').addEventListener('click',()=>{if(!adminUnlocked)return;if(cloud){unlockAllRemote();return}unlocked=new Set(songs.map(s=>s.id));const saved=save();render();if(saved)notify('Las 8 canciones están desbloqueadas en este navegador.');});
 
 function syncAlbumAudio(){
  if($('#song-dialog').open)return;

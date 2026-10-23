@@ -3,7 +3,7 @@
 Primero publicá la página en HTTPS. Un archivo local o `localhost` no sirve para los celulares de los visitantes.
 
 1. Abrí la web publicada. Abajo, tocá **Organización**.
-2. Contraseña: `nadielaadivina`.
+2. Ingresá con `benjaguerra192@gmail.com` y la contraseña que creaste en Supabase.
 3. Ingresá la dirección pública completa, por ejemplo `https://benjaguerra192.github.io/gallerynight26.github.io/`.
 4. Copiá el enlace de una canción.
 5. En **NFC Tools**: **Escribir → Añadir registro → URL/URI**. Pegá el enlace, validá y tocá **Escribir**.
@@ -35,7 +35,7 @@ Si el navegador bloquea el audio automático, tocá **Reproducir**. Podés pausa
 
 Los enlaces NFC existentes siguen funcionando mediante las equivalencias de abajo. Publicá también `audio.js`, `audio.css` y `assets/audio/`. Usá siempre el mismo navegador para conservar la colección.
 
-El acceso de Organización se cierra al recargar o con **Cerrar acceso**. Es una barrera visual del sitio estático, no autenticación segura: la contraseña puede verse en el código. Los enlaces pueden compartirse y no demuestran presencia física.
+La sesión de Organización se conserva al recargar y se cierra con **Cerrar sesión**. Los permisos se verifican en Supabase. Los enlaces pueden compartirse y no demuestran presencia física.
 
 Las ocho URLs de Spotify están en `app.js`. Se verificaron título y artista en Spotify; algunas ediciones son remasterizaciones o compilaciones y pueden diferir de las tapas aportadas. Para otra edición: Spotify → Compartir → Copiar enlace y reemplazá el campo `spotify` de esa canción. https://support.spotify.com/us/article/share-from-spotify/
 
@@ -52,8 +52,10 @@ No hace falta regrabar las etiquetas existentes. Las canciones que siguen en el 
 | `post-crucifixion` | Bohemian Rhapsody |
 | `kiss` | La Isla Bonita |
 
-El avance de canciones retiradas se descarta; Take on Me y Sweet Child o’ Mine conservan su desbloqueo. Actualizá los rótulos físicos si tenían los títulos anteriores.
+Actualizá los rótulos físicos si tenían los títulos anteriores. La competencia comienza desde un registro nuevo; el avance local del demo no se importa porque carece de horarios verificables.
 
 ## Desbloqueo desde Organización
 
-Entrá con la contraseña y tocá **Desbloquear todas las canciones**. Se guardan las ocho como desbloqueadas en ese navegador; podés verlas en Álbumes. **Reiniciar recorrido** vuelve a bloquearlas.
+Entrá con tu cuenta administradora, registrá una familia de prueba y tocá **Desbloquear todas las canciones**. Quedan guardadas en Supabase y esa familia queda fuera del premio. En el leaderboard podés borrar desbloqueos, reiniciar tiempo y avance o eliminar esa familia, siempre con confirmación.
+
+El registro inicia el reloj. Cada escaneo guarda la primera hora de desbloqueo; repetirlo no la modifica. Al completar ocho se congela el tiempo final. Cerrado el recorrido, no se admiten registros ni desbloqueos nuevos; se puede escuchar lo conseguido. Los horarios y la clasificación se administran desde Organización, sin salir de la web.

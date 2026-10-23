@@ -1,0 +1,106 @@
+let participantRecord = null, eventStatus = null, serverOffset = 0, syncingCloud = false, cloudError = '', cloudRevision = 0;
+
+function serverTime() { return Date.now() + serverOffset; }
+function elapsedText(milliseconds) {
+  const total = Math.max(0, Math.floor(milliseconds / 1000));
+  return [Math.floor(total / 3600), Math.floor(total / 60) % 60, total % 60].map(n => String(n).padStart(2, '0')).join(':');
+}
+function applyCloudState(state) {
+  cloudRevision++;
+  eventStatus = state.event;
+  const time = state.server_now || state.event?.server_now;
+  if (time) serverOffset = Date.parse(time) - Date.now();
+  participantRecord = state.participant;
+  familyName = participantRecord?.name || '';
+  unlocked = new Set((participantRecord?.unlocks || []).map(item => item.song_id));
+  renderFamily(); render(); renderCompetition();
+}
+function renderCompetition() {
+  if (!cloud) return;
+  const status = $('#event-status');
+  status.hidden = false;
+  status.textContent = cloudError || (eventStatus?.is_open ? 'RECORRIDO ABIERTO' : 'RECORRIDO CERRADO · Podés escuchar lo que ya conseguiste.');
+  const clock = $('#participant-clock');
+  clock.hidden = !participantRecord;
+  if (participantRecord) {
+    const end = participantRecord.completed_at ? Date.parse(participantRecord.completed_at) : serverTime();
+    const elapsed = elapsedText(end - Date.parse(participantRecord.registered_at));
+    clock.textContent = (participantRecord.is_test ? 'PRUEBA · FUERA DEL PREMIO · ' : participantRecord.completed_at ? 'COMPLETADO EN ' : 'TU TIEMPO · ') + elapsed;
+  }
+  $('#reset').hidden = true;
+  $('#reset').parentElement.querySelector('p').textContent = 'El tiempo cuenta desde el registro. Los reinicios los gestiona Organización.';
+  const submit = $('#family-form button');
+  submit.disabled = syncingCloud || (!participantRecord && !eventStatus?.is_open);
+  $('#family-name').disabled = syncingCloud;
+  if (!participantRecord && eventStatus && !eventStatus.is_open) $('#family-error').textContent = 'El recorrido está cerrado. Esperá la apertura para registrarte.';
+  else if ($('#family-error').textContent === 'El recorrido está cerrado. Esperá la apertura para registrarte.') $('#family-error').textContent = '';
+}
+async function registerFamily(name) {
+  name = name.trim().replace(/\s+/g, ' ');
+  if (!name || name.length > 40) { $('#family-error').textContent = 'Escribí un nombre de hasta 40 caracteres.'; return false; }
+  if (syncingCloud) return false;
+  syncingCloud = true; renderCompetition();
+  try {
+    const state = await cloud.register(name);
+    applyCloudState(state);
+    $('#family-error').textContent = '';
+    $('#family-dialog').close();
+    consumeRemoteLink();
+    return true;
+  } catch (error) { $('#family-error').textContent = error.message; return false; }
+  finally { syncingCloud = false; renderCompetition(); }
+}
+async function unlockRemote(id) {
+  if (!participantRecord) { openDialog($('#family-dialog')); return false; }
+  const song = songs.find(item => item.id === id);
+  if (!song) { notify('Este NFC no corresponde a una canción del recorrido.'); return false; }
+  const already = unlocked.has(id);
+  try {
+    applyCloudState(await cloud.unlock(id));
+    albumIndex = visibleSongs().findIndex(item => item.id === id);
+    navigateTo('albumes'); render(); revealAlbum(); showSong(song, already);
+    return true;
+  } catch (error) { notify(error.message); return false; }
+}
+let consumingNfc = false;
+async function consumeRemoteLink() {
+  if (!participantRecord || consumingNfc) return;
+  const params = new URLSearchParams(location.search);
+  if (!params.has('nfc')) return;
+  consumingNfc = true;
+  const raw = params.get('nfc');
+  const id = Object.hasOwn(legacyNfc, raw) ? legacyNfc[raw] : raw;
+  try {
+    if (await unlockRemote(id)) {
+      params.delete('nfc');
+      history.replaceState(null, '', location.pathname + (params.size ? '?' + params : '') + location.hash);
+    }
+  } finally { consumingNfc = false; }
+}
+async function refreshCompetition() {
+  if (!cloud || syncingCloud || document.hidden) return;
+  syncingCloud = true;
+  const revision = cloudRevision;
+  // A polling response must not replace a newer successful unlock.
+  try { const state=await cloud.me(); if (revision === cloudRevision) { cloudError=''; applyCloudState(state); } }
+  catch { if (revision === cloudRevision) cloudError='SIN CONEXIÓN · Los nuevos desbloqueos necesitan Internet.'; }
+  finally { syncingCloud = false; renderCompetition(); }
+}
+async function startCompetition() {
+  $('#demo-notice').hidden = true;
+  $('#admin-email-label').hidden = false;
+  $('#admin-email').required = true;
+  $('#admin-session-copy').hidden = false;
+  $('#family-later').hidden = false;
+  $('#progress-storage-label').textContent = 'Guardado en la base de datos';
+  $('#competition-admin').hidden = false;
+  $('#reset').hidden = true;
+  await refreshCompetition();
+  await restoreOrganizer();
+  if (!participantRecord && !adminUnlocked && eventStatus?.is_open && !$('#admin-dialog').open) openDialog($('#family-dialog'));
+  await consumeRemoteLink();
+  setInterval(refreshCompetition, 15000);
+  setInterval(() => { renderCompetition(); updateLeaderboardTimes(); }, 1000);
+}
+
+if (cloud) startCompetition();

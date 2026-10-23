@@ -1,0 +1,119 @@
+// Run with a local PGlite module path; tests never connect to production.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { PGlite } = require(path.resolve(process.argv[2] || 'output/testdeps/pglite/dist/index.cjs'));
+const db = new PGlite();
+const ids = { alice:'00000000-0000-4000-8000-000000000001', bob:'00000000-0000-4000-8000-000000000002', admin:'00000000-0000-4000-8000-000000000003' };
+const tracks = ['billie-jean','take-on-me','with-or-without-you','sweet-dreams','every-breath-you-take','bohemian-rhapsody','sweet-child','la-isla-bonita'];
+async function identity(id, role = 'authenticated') {
+  await db.exec('reset role');
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id || '']);
+  await db.exec('set role '+role);
+}
+async function call(name, args = []) {
+  const placeholders = args.map((_, i) => '$'+(i+1)).join(',');
+  const result = await db.query(`select public.${name}(${placeholders}) as result`, args);
+  return result.rows[0].result;
+}
+async function denied(action) { await assert.rejects(action, /permission denied|Acceso de organización requerido|recorrido está cerrado|Confirmá el borrado|hora futura|Estado inválido|check constraint/i); }
+
+(async () => {
+  await db.exec(`create role anon; create role authenticated; create schema auth;
+    create table auth.users(id uuid primary key);
+    create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+    grant usage on schema public,auth to anon,authenticated;`);
+  await db.exec(fs.readFileSync('supabase/migrations/202610230001_competition.sql','utf8'));
+  for (const id of Object.values(ids)) await db.query('insert into auth.users values($1)',[id]);
+  await db.query('insert into public.gn_admins values($1)',[ids.admin]);
+
+  await identity(null,'anon');
+  assert.equal((await call('gn_status')).is_open,true);
+  await denied(() => call('gn_admin_snapshot'));
+  await denied(() => call('gn_register',['intruder']));
+  await denied(() => db.query('select * from public.gn_participants'));
+
+  await identity(ids.alice);
+  let state = await call('gn_register',['  Familia   Uno  ']);
+  assert.equal(state.participant.name,'Familia Uno');
+  const registered = state.participant.registered_at;
+  assert.equal(state.participant.unlocks.length,0);
+  await db.query('select pg_sleep(0.02)');
+  state = await call('gn_unlock',[tracks[0]]);
+  const first = state.participant.unlocks[0].unlocked_at;
+  assert.ok(Date.parse(first) >= Date.parse(registered));
+  await db.query('select pg_sleep(0.02)');
+  state = await call('gn_unlock',[tracks[0]]);
+  assert.equal(state.participant.unlocks[0].unlocked_at,first);
+  state = await call('gn_register',['Otro nombre']);
+  assert.equal(state.participant.registered_at,registered);
+  await denied(() => call('gn_admin_snapshot'));
+  await denied(() => db.query('select * from public.gn_unlocks'));
+  await denied(() => db.query('insert into public.gn_unlocks values($1,$2,now())',[ids.alice,tracks[1]]));
+
+  await identity(ids.bob);
+  assert.equal((await call('gn_me')).participant,null);
+  await call('gn_register',['Familia Dos']);
+  assert.equal((await call('gn_me')).participant.unlocks.length,0);
+
+  await identity(ids.admin);
+  let snapshot = await call('gn_admin_event',['closed',null,null]);
+  assert.equal(snapshot.event.is_open,false);
+  await identity(ids.alice);
+  await denied(() => call('gn_unlock',[tracks[1]]));
+  assert.equal((await call('gn_unlock',[tracks[0]])).participant.unlocks.length,1);
+  await identity(ids.admin);
+  await denied(() => call('gn_admin_event',['closed_until',new Date(Date.now()-60000).toISOString(),null]));
+  const opens = new Date(Date.now()+60000).toISOString();
+  snapshot=await call('gn_admin_event',['closed_until',opens,null]);
+  assert.equal(snapshot.event.is_open,false);
+  await db.exec('reset role');
+  await db.exec("update public.gn_event set opens_at=now()-interval '1 minute'");
+  await identity(ids.admin);
+  assert.equal((await call('gn_admin_snapshot')).event.is_open,true);
+  snapshot=await call('gn_admin_event',['scheduled',new Date(Date.now()-120000).toISOString(),new Date(Date.now()-60000).toISOString()]);
+  assert.equal(snapshot.event.is_open,false);
+  await call('gn_admin_event',['open',null,null]);
+
+  await identity(ids.alice);
+  for (const track of tracks.slice(1)) state=await call('gn_unlock',[track]);
+  assert.equal(state.participant.unlocks.length,8);
+  assert.ok(state.participant.completed_at);
+  assert.ok(state.participant.elapsed_ms>0);
+  const completed = state.participant.completed_at;
+  state=await call('gn_unlock',[tracks[7]]);
+  assert.equal(state.participant.completed_at,completed);
+
+  await identity(ids.admin);
+  snapshot=await call('gn_admin_snapshot');
+  assert.equal(snapshot.participants.length,2);
+  await denied(() => call('gn_admin_action',['delete_unlock',ids.alice,tracks[0],null]));
+  snapshot=await call('gn_admin_action',['delete_unlock',ids.alice,tracks[0],'BORRAR']);
+  let person=snapshot.participants.find(p=>p.id===ids.alice);
+  assert.equal(person.unlocks.length,7);
+  assert.equal(person.completed_at,null);
+  assert.equal(person.registered_at,registered);
+  snapshot=await call('gn_admin_action',['clear_unlocks',ids.alice,null,'BORRAR']);
+  person=snapshot.participants.find(p=>p.id===ids.alice);
+  assert.equal(person.unlocks.length,0);
+  assert.equal(person.registered_at,registered);
+  snapshot=await call('gn_admin_action',['unlock_all',ids.bob,null,null]);
+  person=snapshot.participants.find(p=>p.id===ids.bob);
+  assert.equal(person.is_test,true);
+  assert.equal(person.unlocks.length,8);
+  snapshot=await call('gn_admin_action',['restart',ids.bob,null,'BORRAR']);
+  person=snapshot.participants.find(p=>p.id===ids.bob);
+  assert.equal(person.is_test,false);
+  assert.equal(person.unlocks.length,0);
+  snapshot=await call('gn_admin_action',['delete_participant',ids.alice,null,'BORRAR']);
+  assert.equal(snapshot.participants.length,1);
+  await identity(ids.alice);
+  assert.equal((await call('gn_me')).participant,null);
+  await identity(ids.admin);
+  snapshot=await call('gn_admin_action',['delete_all',null,null,'BORRAR']);
+  assert.equal(snapshot.participants.length,0);
+  await identity(ids.alice);
+  await call('gn_register',['Nuevo intento']);
+  assert.equal((await call('gn_me')).participant.unlocks.length,0);
+  console.log('OK: SQL auth/RLS, server timestamps, immutable scans, closed/scheduled event, completion, admin CRUD, test exclusion and restart.');
+})().catch(error=>{console.error(error);process.exitCode=1}).finally(()=>db.close());
