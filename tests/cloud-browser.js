@@ -9,7 +9,7 @@ async page => {
     const me=()=>({participant:state.participants.find(p=>p.id==='c')||null,event:state.event,server_now:new Date().toISOString()});
     window.__cloudTest=state;window.confirm=message=>{state.lastConfirmation=message;return !!state.confirmAnswer;};
     window.galleryCloud={me:async()=>me(),restoreAdmin:async()=>state.admin?snapshot():null,
-      register:async name=>{if(!state.event.is_open)throw new Error('El recorrido está cerrado.'); const p=state.participants.find(p=>p.id==='c');p.name=name;save();return me()},
+      register:async name=>{const p=state.participants.find(p=>p.id==='c');if(!state.event.is_open&&!p)throw new Error('El recorrido está cerrado.');p.name=name;save();return me()},
       unlock:async id=>{if(!state.event.is_open)throw new Error('El recorrido está cerrado.');const p=me().participant;if(!p.unlocks.some(u=>u.song_id===id))p.unlocks.push({song_id:id,unlocked_at:new Date().toISOString()});save();return me()},
       leaderboard:async()=>({server_now:new Date().toISOString(),participants:state.participants.map(({id,registered_at,...p})=>({...p,unlocks:p.unlocks.map(({song_id})=>({song_id}))}))}),
       login:async()=>{state.admin=true;save();return snapshot()},logout:async()=>{state.admin=false;save()},snapshot:async()=>snapshot(),
@@ -103,5 +103,26 @@ async page => {
   if(await page.locator('#theme-toggle').getAttribute('aria-pressed')!=='false')throw new Error('Manual light theme not remembered');
   await page.getByRole('button',{name:'Organización',exact:true}).click();
   await page.getByRole('heading',{name:'Acceso a etiquetas NFC',exact:true}).waitFor({state:'visible'});
+  const beforeRename=await page.evaluate(()=>{
+    const person=window.__cloudTest.participants.find(p=>p.id==='c');
+    person.name='Tu familia';sessionStorage.setItem('cloud-test-state',JSON.stringify(window.__cloudTest));
+    return {registered:person.registered_at,unlocks:person.unlocks};
+  });
+  await page.goto('http://127.0.0.1:8770/?nfc=la-isla-bonita');
+  await page.locator('#family-dialog').waitFor({state:'visible'});
+  if(await page.locator('#family-name').inputValue())throw new Error('Generic name was not cleared');
+  await page.getByLabel('Nombre de la familia',{exact:true}).fill('Tu familia');
+  await page.locator('#family-form button').click();
+  if(!(await page.locator('#family-error').textContent()).includes('nombre de tu familia'))throw new Error('Generic name was accepted');
+  await page.getByLabel('Nombre de la familia',{exact:true}).fill('Familia Guerra');
+  await page.locator('#family-form button').click();
+  await page.locator('#family-dialog').waitFor({state:'hidden'});
+  const afterRename=await page.evaluate(()=>window.__cloudTest.participants.find(p=>p.id==='c'));
+  if(afterRename.registered_at!==beforeRename.registered||JSON.stringify(afterRename.unlocks)!==JSON.stringify(beforeRename.unlocks))throw new Error('Renaming changed the clock or unlocks');
+  await page.reload();
+  await page.waitForFunction(()=>document.querySelector('#family-display').textContent==='Familia Guerra');
+  if(await page.locator('#family-dialog').isVisible())throw new Error('Valid family was asked to rename again');
+  const familySize=await page.locator('#family-button').boundingBox();
+  if(familySize.height<78||familySize.width<230)throw new Error('Family button is too small');
   return {leaderboard:'public read-only; admin protected',grid:'public and admin verified',theme:'light, dark and live changes verified',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
 }

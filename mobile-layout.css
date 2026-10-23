@@ -117,3 +117,17 @@
   #album-carousel.grid-view .locked-cover svg { width: 64px; height: 64px; }
   .family-button span { max-width: 175px; }
 }
+
+/* A visible invitation to register or edit the family name. */
+#family-button { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; min-height:78px; min-width:230px; max-width:320px; padding:12px 20px; text-align:center; border-width:3px; }
+#family-button small { font-size:10px; letter-spacing:1px; }
+#family-display { max-width:100%; margin:0; font-size:21px; line-height:1.2; }
+#family-button #family-hint { max-width:100%; margin:0; font-size:11px; font-weight:600; line-height:1.4; letter-spacing:0; }
+@media(max-width:1100px) {
+ header { flex-wrap:wrap; }
+ #family-button { order:1; flex-basis:100%; width:100%; max-width:none; min-width:0; margin:0; }
+}
+@media(max-width:750px) and (orientation:portrait) {
+ #family-button { grid-column:1 / -1; grid-row:2; min-height:86px; }
+ #family-display { font-size:23px; }
+}

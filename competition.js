@@ -37,7 +37,7 @@ function renderCompetition() {
 }
 async function registerFamily(name) {
   name = name.trim().replace(/\s+/g, ' ');
-  if (!name || name.length > 40) { $('#family-error').textContent = 'Escribí un nombre de hasta 40 caracteres.'; return false; }
+  if (isGenericFamily(name) || name.length > 40) { $('#family-error').textContent = 'Escribí el nombre de tu familia, hasta 40 caracteres.'; return false; }
   if (syncingCloud) return false;
   syncingCloud = true; renderCompetition();
   try {
@@ -51,7 +51,7 @@ async function registerFamily(name) {
   finally { syncingCloud = false; renderCompetition(); }
 }
 async function unlockRemote(id) {
-  if (!participantRecord) { openDialog($('#family-dialog')); return false; }
+  if (!participantRecord || isGenericFamily(familyName)) { askFamilyName(); return false; }
   const song = songs.find(item => item.id === id);
   if (!song) { notify('Este NFC no corresponde a una canción del recorrido.'); return false; }
   const already = unlocked.has(id);
@@ -64,7 +64,7 @@ async function unlockRemote(id) {
 }
 let consumingNfc = false;
 async function consumeRemoteLink() {
-  if (!participantRecord || consumingNfc) return;
+  if (!participantRecord || consumingNfc || isGenericFamily(familyName)) return;
   const params = new URLSearchParams(location.search);
   if (!params.has('nfc')) return;
   consumingNfc = true;
@@ -98,7 +98,7 @@ async function startCompetition() {
   await refreshCompetition();
   await restoreOrganizer();
   refreshPublicLeaderboard();
-  if (!participantRecord && !adminUnlocked && currentSection !== 'ranking' && eventStatus?.is_open && !$('#admin-dialog').open) openDialog($('#family-dialog'));
+  if (isGenericFamily(familyName) && (participantRecord || (!adminUnlocked && currentSection !== 'ranking' && eventStatus?.is_open)) && !$('#admin-dialog').open) askFamilyName();
   await consumeRemoteLink();
   setInterval(refreshCompetition, 15000);
   setInterval(() => { renderCompetition(); updateLeaderboardTimes(); }, 1000);

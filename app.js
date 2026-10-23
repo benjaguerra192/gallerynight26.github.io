@@ -124,13 +124,15 @@ selectSection(location.hash.slice(1));
 const familyKey='gallery-night:family:v1';
 function readFamily(){try{return (localStorage.getItem(familyKey)||'').trim().slice(0,40)}catch{return ''}}
 let familyName=cloud?'':readFamily();
-function renderFamily(){$('#family-display').textContent=familyName||'Tu familia';$('#family-button').setAttribute('aria-label','Cambiar nombre de la familia '+familyName)}
-function setFamily(value){if(cloud)return registerFamily(value);const name=value.trim().replace(/\s+/g,' ');if(!name||name.length>40){$('#family-error').textContent='Escribí un nombre de hasta 40 caracteres.';return false}familyName=name;try{localStorage.setItem(familyKey,name)}catch{notify('El nombre se conservará solo mientras esta página esté abierta.')}renderFamily();$('#family-error').textContent='';$('#family-dialog').close();consumeLink();return true}
+function isGenericFamily(name){return ['','tu familia','familia','mi familia'].includes(name.trim().replace(/\s+/g,' ').toLocaleLowerCase('es'))}
+function renderFamily(){const generic=isGenericFamily(familyName);$('#family-display').textContent=generic?'Ingresá tu familia':familyName;$('#family-hint').textContent=generic?'Tocá acá para agregar el nombre':'Tocá acá para cambiar el nombre';$('#family-button').setAttribute('aria-label',generic?'Ingresar nombre de la familia':'Cambiar nombre de la familia '+familyName)}
+function setFamily(value){if(cloud)return registerFamily(value);const name=value.trim().replace(/\s+/g,' ');if(isGenericFamily(name)||name.length>40){$('#family-error').textContent='Escribí el nombre de tu familia, hasta 40 caracteres.';return false}familyName=name;try{localStorage.setItem(familyKey,name)}catch{notify('El nombre se conservará solo mientras esta página esté abierta.')}renderFamily();$('#family-error').textContent='';$('#family-dialog').close();consumeLink();return true}
 $('#family-form').addEventListener('submit',e=>{e.preventDefault();setFamily($('#family-name').value)});
 $('#family-dialog').addEventListener('cancel',e=>{if(!familyName&&!cloud)e.preventDefault()});
-$('#family-button').addEventListener('click',()=>{$('#family-name').value=familyName;$('#family-error').textContent='';openDialog($('#family-dialog'))});
+function askFamilyName(){$('#family-name').value=isGenericFamily(familyName)?'':familyName;$('#family-error').textContent='';openDialog($('#family-dialog'))}
+$('#family-button').addEventListener('click',askFamilyName);
 renderFamily();
-unlocked=cloud?new Set():readProgress();render();renderLinks();if(!cloud){if(familyName)consumeLink();else openDialog($('#family-dialog'))}
+unlocked=cloud?new Set():readProgress();render();renderLinks();if(!cloud){if(!isGenericFamily(familyName))consumeLink();else askFamilyName()}
 
 // Acceso de cortesía del sitio estático; no es autenticación de servidor.
 function authorizeAdmin(password){if(cloud)return loginOrganizer(password);if(password!=='nadielaadivina'){$('#admin-error').textContent='Contraseña incorrecta.';return false}adminUnlocked=true;$('#admin-password').value='';$('#admin-error').textContent='';$('#admin-dialog').close();renderLinks();navigateTo('etiquetas');return true}
