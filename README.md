@@ -56,7 +56,7 @@ Un reproductor compartido evita superposición. Pausa/Reproducir disponible en e
 
 - **Ranking** es público y de solo lectura, sin iniciar sesión. Permite alternar leaderboard y grilla de canciones; no publica identificadores de acceso, email ni horarios individuales de desbloqueo. Los permisos para editar y borrar siguen siendo exclusivos de Organización.
 - Organización también permite alternar entre el leaderboard con gestión y una grilla con el horario de cada canción. En celular, la grilla se desliza horizontalmente dentro de su panel.
-- El modo oscuro sigue automáticamente la preferencia del sistema mediante `prefers-color-scheme`, incluso si cambia con la web abierta. Mantiene los colores escolares, las portadas y el logo originales.
+- El tema sigue automáticamente la preferencia del sistema hasta que se usa el botón ☀/☾ de la cabecera. La elección manual claro/oscuro se guarda en este navegador y se conserva al recargar. Mantiene los colores escolares, las portadas y el logo originales.
 
 - Organización: email `benjaguerra192@gmail.com` y la contraseña creada en Supabase. La sesión persiste hasta cerrar sesión o borrar los datos del navegador. Se usa almacenamiento del SDK, no cookies HttpOnly; las sesiones de administrador y visitante están separadas.
 - El reloj comienza al registrar la familia. Se detiene al conseguir las ocho canciones. El ranking ordena a quienes completaron por menor duración; muestra registro, finalización y horario de cada desbloqueo en hora argentina.

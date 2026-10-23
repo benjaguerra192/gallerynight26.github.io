@@ -19,7 +19,7 @@ async page => {
   })();`;
   await page.route('**/database.js', route => route.fulfill({contentType:'application/javascript',body:fixture}));
   await page.goto('http://127.0.0.1:8770/');
-  await page.evaluate(()=>sessionStorage.removeItem('cloud-test-state'));
+  await page.evaluate(()=>{sessionStorage.removeItem('cloud-test-state');localStorage.removeItem('gallery-night:theme');});
   await page.reload();
   await page.getByRole('button',{name:'Organización',exact:true}).click();
   await page.getByLabel('Email de organización').fill('organizer@example.test');
@@ -79,8 +79,10 @@ async page => {
     if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Grid causes page overflow');
   }
   await page.emulateMedia({colorScheme:'light'});
+  await page.waitForFunction(()=>document.documentElement.dataset.theme==='light');
   const light=await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor);
   await page.emulateMedia({colorScheme:'dark'});
+  await page.waitForFunction(()=>document.documentElement.dataset.theme==='dark');
   const dark=await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor);
   if(light===dark)throw new Error('Device theme did not change panel');
   await page.setViewportSize({width:390,height:844});
@@ -88,7 +90,17 @@ async page => {
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('#site-navigation')).visibility==='hidden');
   await page.screenshot({path:'output/playwright/ranking-dark.png',fullPage:true});
   await page.emulateMedia({colorScheme:'light'});
+  await page.waitForFunction(()=>document.documentElement.dataset.theme==='light');
   if(await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor)!==light)throw new Error('Theme did not return to light');
+  await page.getByRole('button',{name:'Modo oscuro',exact:true}).click();
+  if(await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor)!==dark)throw new Error('Manual dark toggle failed');
+  await page.reload();
+  if(await page.locator('#theme-toggle').getAttribute('aria-pressed')!=='true')throw new Error('Manual theme not remembered');
+  await page.getByRole('button',{name:'Modo oscuro',exact:true}).click();
+  await page.emulateMedia({colorScheme:'dark'});
+  if(await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor)!==light)throw new Error('Device overrode manual light choice');
+  await page.reload();
+  if(await page.locator('#theme-toggle').getAttribute('aria-pressed')!=='false')throw new Error('Manual light theme not remembered');
   await page.getByRole('button',{name:'Organización',exact:true}).click();
   await page.getByRole('heading',{name:'Acceso a etiquetas NFC',exact:true}).waitFor({state:'visible'});
   return {leaderboard:'public read-only; admin protected',grid:'public and admin verified',theme:'light, dark and live changes verified',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
