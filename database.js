@@ -32,7 +32,12 @@
     },
     async login(email, password) {
       const { error } = await admin.auth.signInWithPassword({ email, password });
-      if (error) throw new Error('Email o contraseña incorrectos.');
+      if (error) {
+        if (error.code === 'invalid_credentials') throw new Error('Email o contraseña incorrectos.');
+        if (error.code === 'email_not_confirmed') throw new Error('Confirmá tu email antes de entrar.');
+        if (error.status === 429) throw new Error('Demasiados intentos. Esperá un momento antes de volver a entrar.');
+        throw new Error('No se pudo iniciar sesión. Revisá la conexión o el estado de Supabase.');
+      }
       return rpc(admin, 'gn_admin_snapshot');
     },
     async logout() {
