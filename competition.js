@@ -25,7 +25,9 @@ function renderCompetition() {
   if (participantRecord) {
     const end = participantRecord.completed_at ? Date.parse(participantRecord.completed_at) : serverTime();
     const elapsed = elapsedText(end - Date.parse(participantRecord.registered_at));
-    clock.textContent = (participantRecord.is_test ? 'PRUEBA · FUERA DEL PREMIO · ' : participantRecord.completed_at ? 'COMPLETADO EN ' : 'TU TIEMPO · ') + elapsed;
+    $('#clock-label').textContent = participantRecord.is_test ? 'PRUEBA · FUERA DEL PREMIO' : participantRecord.completed_at ? 'COMPLETADO EN' : 'TU TIEMPO';
+    $('#clock-digits').textContent = elapsed;
+    clock.classList.toggle('completed',!!participantRecord.completed_at);
   }
   $('#reset').hidden = true;
   $('#reset').parentElement.querySelector('p').textContent = 'El tiempo cuenta desde el registro. Los reinicios los gestiona Organización.';
@@ -39,7 +41,8 @@ async function registerFamily(name) {
   name = name.trim().replace(/\s+/g, ' ');
   if (isGenericFamily(name) || name.length > 40) { $('#family-error').textContent = 'Escribí el nombre de tu familia, hasta 40 caracteres.'; return false; }
   if (syncingCloud) return false;
-  syncingCloud = true; renderCompetition();
+  $('#family-error').textContent = '';
+  syncingCloud = true; setRegistrationBusy(true); renderCompetition();
   try {
     const state = await cloud.register(name);
     applyCloudState(state);
@@ -48,7 +51,13 @@ async function registerFamily(name) {
     consumeRemoteLink();
     return true;
   } catch (error) { $('#family-error').textContent = error.message; return false; }
-  finally { syncingCloud = false; renderCompetition(); }
+  finally { syncingCloud = false; setRegistrationBusy(false); renderCompetition(); }
+}
+function setRegistrationBusy(busy) {
+  $('#family-form').setAttribute('aria-busy',String(busy));
+  $('#family-registration').hidden = !busy;
+  $('#family-form button').textContent = busy ? 'Guardando familia…' : 'Empezar el recorrido ↗';
+  $('#family-later').disabled = busy;
 }
 async function unlockRemote(id) {
   if (!participantRecord || isGenericFamily(familyName)) { askFamilyName(); return false; }

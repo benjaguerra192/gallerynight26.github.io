@@ -115,8 +115,19 @@ async page => {
   await page.locator('#family-form button').click();
   if(!(await page.locator('#family-error').textContent()).includes('nombre de tu familia'))throw new Error('Generic name was accepted');
   await page.getByLabel('Nombre de la familia',{exact:true}).fill('Familia Guerra');
+  await page.evaluate(()=>{
+    const register=cloud.register;
+    cloud.register=name=>new Promise((resolve,reject)=>{window.__finishRegistration=()=>register(name).then(resolve,reject);});
+  });
   await page.locator('#family-form button').click();
+  await page.locator('#family-registration').waitFor({state:'visible'});
+  if(await page.locator('#family-error').textContent())throw new Error('Previous validation error remained during registration');
+  if(!(await page.locator('#family-name').isDisabled())||await page.locator('#family-form').getAttribute('aria-busy')!=='true')throw new Error('Registration did not show busy state');
+  if(await page.locator('#family-registration [role="progressbar"]').getAttribute('aria-valuenow')!==null)throw new Error('Indeterminate registration has a fabricated percentage');
+  await page.screenshot({path:'output/playwright/registration-progress.png'});
+  await page.evaluate(()=>window.__finishRegistration());
   await page.locator('#family-dialog').waitFor({state:'hidden'});
+  if(await page.locator('#family-registration').isVisible())throw new Error('Registration progress was not cleared');
   const afterRename=await page.evaluate(()=>window.__cloudTest.participants.find(p=>p.id==='c'));
   if(afterRename.registered_at!==beforeRename.registered||JSON.stringify(afterRename.unlocks)!==JSON.stringify(beforeRename.unlocks))throw new Error('Renaming changed the clock or unlocks');
   await page.reload();
@@ -124,5 +135,25 @@ async page => {
   if(await page.locator('#family-dialog').isVisible())throw new Error('Valid family was asked to rename again');
   const familySize=await page.locator('#family-button').boundingBox();
   if(familySize.height<78||familySize.width<230)throw new Error('Family button is too small');
+  const digitSize=await page.locator('#clock-digits').evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
+  if(digitSize<56)throw new Error('Timer is too small');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  if(await page.locator('#clock-digits').evaluate(node=>getComputedStyle(node).animationName)!=='none')throw new Error('Timer ignores reduced motion');
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.evaluate(async()=>{await document.fonts.load('64px VT323');await document.fonts.load('32px Audiowide');});
+  if(!(await page.evaluate(()=>document.fonts.check('64px VT323')&&document.fonts.check('32px Audiowide'))))throw new Error('Retro fonts failed to load');
+  for(const width of [320,390,844,1280]){
+    await page.setViewportSize({width,height:width===844?390:844});
+    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Retro layout overflows');
+  }
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(()=>scrollTo(0,0));
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#site-navigation')).visibility==='hidden');
+  await page.screenshot({path:'output/playwright/retro-timer.png'});
+  await page.locator('#family-button').click();
+  await page.evaluate(()=>{cloud.register=async()=>{throw new Error('Prueba de conexión fallida');};});
+  await page.locator('#family-form button').click();
+  await page.waitForFunction(()=>document.querySelector('#family-error').textContent==='Prueba de conexión fallida');
+  if(await page.locator('#family-registration').isVisible()||await page.locator('#family-form button').isDisabled())throw new Error('Registration failure left progress or button stuck');
   return {leaderboard:'public read-only; admin protected',grid:'public and admin verified',theme:'light, dark and live changes verified',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
 }

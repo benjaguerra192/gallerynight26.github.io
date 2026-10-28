@@ -54,6 +54,10 @@ Un reproductor compartido evita superposición. Pausa/Reproducir disponible en e
 
 ## Competencia y administración
 
+- Timer grande con tipografía digital, brillo y barrido de luz suaves. El valor sigue usando la hora del servidor y se congela al completar las ocho canciones. Los efectos se desactivan con `prefers-reduced-motion`.
+- Registro familiar con barra indeterminada mientras espera al servidor; se oculta al terminar o fallar y permite reintentar. No muestra porcentajes ficticios ni retrasa la respuesta.
+- Fuentes locales Audiowide (títulos) y VT323 (timer y detalles), de [Google Fonts](https://github.com/google/fonts), incluidas con sus licencias OFL en `assets/fonts/`. No necesitan un proveedor externo para cargarse.
+
 - **Ranking** es público y de solo lectura, sin iniciar sesión. Permite alternar leaderboard y grilla de canciones; no publica identificadores de acceso, email ni horarios individuales de desbloqueo. Los permisos para editar y borrar siguen siendo exclusivos de Organización.
 - Organización también permite alternar entre el leaderboard con gestión y una grilla con el horario de cada canción. En celular, la grilla se desliza horizontalmente dentro de su panel.
 - El tema sigue automáticamente la preferencia del sistema hasta que se usa el botón ☀/☾ de la cabecera. La elección manual claro/oscuro se guarda en este navegador y se conserva al recargar. Mantiene los colores escolares, las portadas y el logo originales.
