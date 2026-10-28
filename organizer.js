@@ -1,4 +1,4 @@
-let organizerSnapshot = null, organizerOffset = 0, refreshingOrganizer = false, organizerBusy = false;
+let organizerSnapshot = null, organizerOffset = 0, refreshingOrganizer = false, organizerBusy = false, organizerRevision = 0;
 const argentinaDates = new Intl.DateTimeFormat('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'medium' });
 function dateText(value) { return value ? argentinaDates.format(new Date(value)) : '—'; }
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
@@ -19,6 +19,7 @@ function updateLeaderboardTimes() {
   });
 }
 function renderOrganizer(snapshot) {
+  organizerRevision++;
   const firstSnapshot = !organizerSnapshot;
   organizerSnapshot = snapshot;
   organizerOffset = Date.parse(snapshot.server_now) - Date.now();
@@ -53,7 +54,8 @@ function renderOrganizer(snapshot) {
 async function refreshOrganizer() {
   if (!cloud || !adminUnlocked || refreshingOrganizer || organizerBusy || document.hidden) return;
   refreshingOrganizer = true;
-  try { renderOrganizer(await cloud.snapshot()); $('#leaderboard-error').textContent = ''; }
+  const revision = organizerRevision;
+  try { const snapshot=await cloud.snapshot(); if(revision===organizerRevision&&!organizerBusy&&adminUnlocked) { renderOrganizer(snapshot); $('#leaderboard-error').textContent = ''; } }
   catch (error) {
     $('#leaderboard-error').textContent = 'No se pudo actualizar: ' + error.message;
     if (error.code === '42501') { adminUnlocked = false; renderLinks(); navigateTo('inicio'); }
@@ -96,24 +98,50 @@ function deleteDescription(action, person, track) {
 async function confirmAdminDelete(action, target = null, track = null) {
   if (!adminUnlocked || organizerBusy) return;
   organizerBusy = true;
+  $('#leaderboard-error').textContent = '';
   try {
     // Refresh the leaderboard before describing what will be removed.
     renderOrganizer(await cloud.snapshot());
     let approved;
     if (action === 'delete_all') {
-      approved = prompt('Se eliminarán los ' + organizerSnapshot.participants.length + ' participantes y todos sus desbloqueos. No se puede deshacer. Escribí BORRAR para confirmar:') === 'BORRAR';
+      approved = await confirmDeleteAll(organizerSnapshot);
     } else {
       const person = organizerSnapshot.participants.find(p => p.id === target);
       if (!person) throw new Error('Ese participante ya no existe.');
       approved = confirm(deleteDescription(action, person, track) + '\n\n¿Confirmás el borrado?');
     }
     if (!approved) return;
-    renderOrganizer(await cloud.action(action, target, track, true));
-    await refreshCompetition();
+    $('#delete-all-participants').disabled = true;
+    $('#delete-all-participants').textContent = action === 'delete_all' ? 'Borrando participantes…' : 'Actualizando…';
+    const snapshot = await cloud.action(action, target, track, true);
+    renderOrganizer(snapshot);
+    applyCloudState({participant:snapshot.participants.find(p=>p.id===participantRecord?.id)||null,event:snapshot.event,server_now:snapshot.server_now});
+    if(action==='delete_all') {
+      const url=new URL(location.href);url.searchParams.delete('nfc');
+      history.replaceState(null,'',url.pathname+url.search+url.hash);
+    }
     notify('Datos actualizados. El leaderboard ya refleja el cambio.');
   } catch (error) { $('#leaderboard-error').textContent = error.message; }
-  finally { organizerBusy = false; }
+  finally { organizerBusy = false; $('#delete-all-participants').disabled = false; $('#delete-all-participants').textContent = 'Borrar todos los participantes y desbloqueos'; }
 }
+function confirmDeleteAll(snapshot) {
+  const dialog = $('#delete-all-dialog');
+  $('#delete-all-count').textContent = 'Se eliminarán '+snapshot.participants.length+' participantes, sus horarios y todos sus desbloqueos. No se puede deshacer. El estado de apertura del recorrido se conserva.';
+  $('#delete-all-preview').innerHTML = sortLeaderboard(snapshot.participants).map(p=>'<li><strong>'+escapeHtml(p.name)+'</strong><span>'+p.unlocks.length+'/8 · '+elapsedText(p.elapsed_ms)+(p.is_test?' · PRUEBA':'')+'</span></li>').join('');
+  $('#delete-all-word').value = '';
+  $('#delete-all-confirm').disabled = true;
+  dialog.returnValue = '';
+  return new Promise(resolve=>{
+    dialog.addEventListener('close',()=>resolve(dialog.returnValue==='confirmed'),{once:true});
+    openDialog(dialog);
+  });
+}
+function deleteAllWordMatches() { return $('#delete-all-word').value.trim().toUpperCase()==='BORRAR'; }
+$('#delete-all-word').addEventListener('input',()=>{$('#delete-all-confirm').disabled=!deleteAllWordMatches();});
+$('#delete-all-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(deleteAllWordMatches()) $('#delete-all-dialog').close('confirmed');
+});
 function eventInputs() {
   const mode = $('#event-mode').value;
   $('#event-opens-label').hidden = !['closed_until','scheduled'].includes(mode);

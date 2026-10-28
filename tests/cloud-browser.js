@@ -9,7 +9,7 @@ async page => {
     const me=()=>({participant:state.participants.find(p=>p.id==='c')||null,event:state.event,server_now:new Date().toISOString()});
     window.__cloudTest=state;window.confirm=message=>{state.lastConfirmation=message;return !!state.confirmAnswer;};
     window.galleryCloud={me:async()=>me(),restoreAdmin:async()=>state.admin?snapshot():null,
-      register:async name=>{const p=state.participants.find(p=>p.id==='c');if(!state.event.is_open&&!p)throw new Error('El recorrido está cerrado.');p.name=name;save();return me()},
+      register:async name=>{let p=state.participants.find(p=>p.id==='c');if(!state.event.is_open&&!p)throw new Error('El recorrido está cerrado.');if(!p){p={...entry('c',name,0,0),registered_at:new Date().toISOString()};state.participants.push(p);}p.name=name;save();return me()},
       unlock:async id=>{if(!state.event.is_open)throw new Error('El recorrido está cerrado.');const p=me().participant;if(!p.unlocks.some(u=>u.song_id===id))p.unlocks.push({song_id:id,unlocked_at:new Date().toISOString()});save();return me()},
       leaderboard:async()=>({server_now:new Date().toISOString(),participants:state.participants.map(({id,registered_at,...p})=>({...p,unlocks:p.unlocks.map(({song_id})=>({song_id}))}))}),
       login:async()=>{state.admin=true;save();return snapshot()},logout:async()=>{state.admin=false;save()},snapshot:async()=>snapshot(),
@@ -155,5 +155,48 @@ async page => {
   await page.locator('#family-form button').click();
   await page.waitForFunction(()=>document.querySelector('#family-error').textContent==='Prueba de conexión fallida');
   if(await page.locator('#family-registration').isVisible()||await page.locator('#family-form button').isDisabled())throw new Error('Registration failure left progress or button stuck');
+  await page.reload();
+  await page.evaluate(async()=>{adminUnlocked=true;renderOrganizer(await cloud.login());navigateTo('etiquetas');window.prompt=()=>{throw new Error('Native prompts are unavailable');};});
+  const actionsBefore=await page.evaluate(()=>window.__cloudTest.actions);
+  await page.locator('#delete-all-participants').click();
+  await page.locator('#delete-all-dialog').waitFor({state:'visible'});
+  if(await page.locator('#delete-all-preview li').count()!==4)throw new Error('Confirmation did not show current leaderboard');
+  if(!(await page.locator('#delete-all-confirm').isDisabled()))throw new Error('Global deletion did not require confirmation');
+  await page.getByLabel('Escribí BORRAR para confirmar',{exact:true}).fill('incorrecto');
+  if(!(await page.locator('#delete-all-confirm').isDisabled()))throw new Error('Wrong confirmation allowed deletion');
+  await page.locator('#delete-all-dialog').getByRole('button',{name:'Cancelar',exact:true}).click();
+  await page.waitForFunction(()=>!organizerBusy);
+  if(await page.evaluate(()=>window.__cloudTest.actions)!==actionsBefore)throw new Error('Cancel deleted data');
+  await page.locator('#delete-all-participants').click();
+  await page.getByLabel('Escribí BORRAR para confirmar',{exact:true}).fill(' borrar ');
+  await page.evaluate(()=>{window.__originalAction=cloud.action;cloud.action=async()=>{throw new Error('Prueba de borrado fallido');};});
+  await page.locator('#delete-all-confirm').click();
+  await page.waitForFunction(()=>document.querySelector('#leaderboard-error').textContent==='Prueba de borrado fallido');
+  if(await page.evaluate(()=>window.__cloudTest.participants.length)!==4)throw new Error('Failed delete mutated data');
+  await page.evaluate(()=>{cloud.action=window.__originalAction;});
+  await page.evaluate(async()=>{
+    const snapshot=structuredClone(await cloud.snapshot()),original=cloud.snapshot;
+    cloud.snapshot=()=>new Promise(resolve=>{window.__releaseOldSnapshot=()=>resolve(snapshot);});
+    window.__oldRefresh=refreshOrganizer();cloud.snapshot=original;
+  });
+  await page.locator('#delete-all-participants').click();
+  await page.getByLabel('Escribí BORRAR para confirmar',{exact:true}).fill('BORRAR');
+  await page.locator('#delete-all-confirm').click();
+  await page.waitForFunction(()=>window.__cloudTest.participants.length===0&&!organizerBusy);
+  await page.evaluate(async()=>{window.__releaseOldSnapshot();await window.__oldRefresh;});
+  if(await page.locator('#leaderboard .participant-row').count())throw new Error('Deleted participants stayed visible');
+  if(await page.locator('#participant-clock').isVisible())throw new Error('Deleted family timer stayed visible');
+  if(await page.evaluate(()=>unlocked.size)!==0)throw new Error('Deleted family retained unlocks');
+  await page.reload();
+  await page.getByText('Leaderboard en vivo',{exact:true}).waitFor();
+  if(await page.locator('#leaderboard .participant-row').count())throw new Error('Participants returned after reload');
+  await page.evaluate(async()=>{await cloud.event('open');});
+  await page.evaluate(async()=>{await refreshCompetition();});
+  await page.locator('#family-button').click();
+  await page.getByLabel('Nombre de la familia',{exact:true}).fill('Nueva competencia');
+  await page.locator('#family-form button').click();
+  await page.waitForFunction(()=>participantRecord?.name==='Nueva competencia');
+  if(await page.evaluate(()=>unlocked.size)!==0)throw new Error('New registration inherited old unlocks');
+  if(await page.evaluate(()=>Date.now()-Date.parse(participantRecord.registered_at))>10000)throw new Error('New registration inherited old clock');
   return {leaderboard:'public read-only; admin protected',grid:'public and admin verified',theme:'light, dark and live changes verified',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
 }
