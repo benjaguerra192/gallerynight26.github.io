@@ -1,14 +1,6 @@
-@font-face { font-family:'Audiowide'; src:url('assets/fonts/Audiowide-Regular.ttf') format('truetype'); font-weight:400; font-display:swap; }
-@font-face { font-family:'VT323'; src:url('assets/fonts/VT323-Regular.ttf') format('truetype'); font-weight:400; font-display:swap; }
-
-.intro h1 { font-family:'Audiowide',Impact,sans-serif; font-weight:400; font-size:clamp(40px,6.1vw,82px); line-height:1.1; letter-spacing:-2px; }
-.intro h1 b { font-weight:400; letter-spacing:-4px; }
-.section-head h2, .guide-section h2, #ranking > h2, dialog h2 { font-family:'Audiowide',Impact,sans-serif; font-weight:400; font-size:clamp(23px,3vw,32px); line-height:1.3; }
-.hero-sticker, .album-position, .viewer-controls > span { font-family:'VT323',monospace; font-size:20px; letter-spacing:1px; }
-
 #participant-clock { position:relative; isolation:isolate; overflow:hidden; padding:20px 16px; border:3px solid var(--yellow); background:#082d1f; color:#fffef7; box-shadow:5px 5px 0 var(--red),0 0 24px #ffe33133; }
 #clock-label { display:block; font-size:12px; line-height:1.5; letter-spacing:3px; }
-#clock-digits { display:block; font:400 clamp(56px,13vw,100px)/1.1 'VT323','Courier New',monospace; font-variant-numeric:tabular-nums; letter-spacing:3px; color:var(--yellow); text-shadow:0 0 8px #ffe33188,3px 3px 0 #092b1a; animation:timer-glow 3s ease-in-out infinite; }
+#clock-digits { display:block; font:800 clamp(56px,13vw,100px)/1.1 var(--display); font-variant-numeric:tabular-nums; letter-spacing:3px; color:var(--yellow); text-shadow:0 0 8px #ffe33188,3px 3px 0 #092b1a; animation:timer-glow 3s ease-in-out infinite; }
 #participant-clock::after { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg,transparent 35%,#fffef736 50%,transparent 65%); transform:translateX(-130%); animation:timer-shine 6s ease-in-out infinite; }
 #participant-clock.completed { border-color:#a4f7b4; }
 #participant-clock.completed #clock-digits { color:#a4f7b4; }
@@ -20,8 +12,6 @@
 @keyframes timer-shine { 0%,65% { transform:translateX(-130%); } 100% { transform:translateX(130%); } }
 @keyframes registration-sweep { from { transform:translateX(-50%); } to { transform:translateX(170%); } }
 @media(max-width:750px) {
- .intro h1 { font-size:clamp(38px,10.5vw,70px); margin:22px auto; }
- #family-dialog h2 { font-size:26px; }
  #participant-clock { padding:16px 10px; }
  #clock-label { font-size:11px; letter-spacing:2px; }
  #clock-digits { letter-spacing:1px; }

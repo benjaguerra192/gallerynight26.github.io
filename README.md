@@ -56,7 +56,9 @@ Un reproductor compartido evita superposición. Pausa/Reproducir disponible en e
 
 - Timer grande con tipografía digital, brillo y barrido de luz suaves. El valor sigue usando la hora del servidor y se congela al completar las ocho canciones. Los efectos se desactivan con `prefers-reduced-motion`.
 - Registro familiar con barra indeterminada mientras espera al servidor; se oculta al terminar o fallar y permite reintentar. No muestra porcentajes ficticios ni retrasa la respuesta.
-- Fuentes locales Audiowide (títulos) y VT323 (timer y detalles), de [Google Fonts](https://github.com/google/fonts), incluidas con sus licencias OFL en `assets/fonts/`. No necesitan un proveedor externo para cargarse.
+- Tipografías originales restauradas: Barlow Condensed en los títulos y el timer, DM Sans para lectura y controles. Las antiguas fuentes experimentales permanecen como archivos sin uso.
+- Portada con explicación del objetivo y reglas básicas; mapa original en Inicio y Cómo jugar. Los números indican cantidad de etiquetas por zona, no orden ni puntos. Se puede abrir la imagen completa para ampliarla.
+- Instrucciones detalladas junto al formulario familiar en la primera visita, incluso con el recorrido cerrado. El aviso se recuerda al cerrarlo o guardar el nombre; siempre se puede releer desde Cómo jugar. Familia y modo claro/oscuro están dentro del menú, con controles de tamaño similar.
 
 - **Ranking** es público y de solo lectura, sin iniciar sesión. Permite alternar leaderboard y grilla de canciones; no publica identificadores de acceso, email ni horarios individuales de desbloqueo. Los permisos para editar y borrar siguen siendo exclusivos de Organización.
 - Organización también permite alternar entre el leaderboard con gestión y una grilla con el horario de cada canción. En celular, la grilla se desliza horizontalmente dentro de su panel.

@@ -46,6 +46,7 @@ async function registerFamily(name) {
   try {
     const state = await cloud.register(name);
     applyCloudState(state);
+    rememberInstructions();
     $('#family-error').textContent = '';
     $('#family-dialog').close();
     consumeRemoteLink();
@@ -73,7 +74,7 @@ async function unlockRemote(id) {
 }
 let consumingNfc = false;
 async function consumeRemoteLink() {
-  if (!participantRecord || consumingNfc || isGenericFamily(familyName)) return;
+  if (!participantRecord || consumingNfc || isGenericFamily(familyName) || $('#family-dialog').open) return;
   const params = new URLSearchParams(location.search);
   if (!params.has('nfc')) return;
   consumingNfc = true;
@@ -107,7 +108,9 @@ async function startCompetition() {
   await refreshCompetition();
   await restoreOrganizer();
   refreshPublicLeaderboard();
-  if (isGenericFamily(familyName) && (participantRecord || (!adminUnlocked && currentSection !== 'ranking' && eventStatus?.is_open)) && !$('#admin-dialog').open) askFamilyName();
+  const firstWelcome = !adminUnlocked && currentSection !== 'ranking' && needsInstructions();
+  const needsName = isGenericFamily(familyName) && (participantRecord || (!adminUnlocked && currentSection !== 'ranking' && eventStatus?.is_open));
+  if ((firstWelcome || needsName) && !$('#admin-dialog').open) askFamilyName();
   await consumeRemoteLink();
   setInterval(refreshCompetition, 15000);
   setInterval(() => { renderCompetition(); updateLeaderboardTimes(); }, 1000);

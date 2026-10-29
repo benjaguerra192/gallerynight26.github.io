@@ -1,4 +1,7 @@
 async page => {
+  const showMenu=async()=>{if(await page.locator('#menu-toggle').isVisible()&&!await page.locator('#site-navigation').isVisible())await page.locator('#menu-toggle').click();};
+  const clickFamily=async()=>{await showMenu();await page.locator('#family-button').click();};
+  const clickTheme=async()=>{await showMenu();await page.getByRole('button',{name:'Modo oscuro',exact:true}).click();};
   const fixture = `(() => {
     const tracks=['billie-jean','take-on-me','with-or-without-you','sweet-dreams','every-breath-you-take','bohemian-rhapsody','sweet-child','la-isla-bonita'];
     const now=Date.now();
@@ -19,7 +22,7 @@ async page => {
   })();`;
   await page.route('**/database.js', route => route.fulfill({contentType:'application/javascript',body:fixture}));
   await page.goto('http://127.0.0.1:8770/');
-  await page.evaluate(()=>{sessionStorage.removeItem('cloud-test-state');localStorage.removeItem('gallery-night:theme');});
+  await page.evaluate(()=>{sessionStorage.removeItem('cloud-test-state');localStorage.removeItem('gallery-night:theme');localStorage.setItem('gallery-night:instructions:v1','seen');});
   await page.reload();
   await page.getByRole('button',{name:'Organización',exact:true}).click();
   await page.getByLabel('Email de organización').fill('organizer@example.test');
@@ -92,11 +95,11 @@ async page => {
   await page.emulateMedia({colorScheme:'light'});
   await page.waitForFunction(()=>document.documentElement.dataset.theme==='light');
   if(await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor)!==light)throw new Error('Theme did not return to light');
-  await page.getByRole('button',{name:'Modo oscuro',exact:true}).click();
+  await clickTheme();
   if(await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor)!==dark)throw new Error('Manual dark toggle failed');
   await page.reload();
   if(await page.locator('#theme-toggle').getAttribute('aria-pressed')!=='true')throw new Error('Manual theme not remembered');
-  await page.getByRole('button',{name:'Modo oscuro',exact:true}).click();
+  await clickTheme();
   await page.emulateMedia({colorScheme:'dark'});
   if(await page.locator('#public-results').evaluate(node=>getComputedStyle(node).backgroundColor)!==light)throw new Error('Device overrode manual light choice');
   await page.reload();
@@ -133,15 +136,17 @@ async page => {
   await page.reload();
   await page.waitForFunction(()=>document.querySelector('#family-display').textContent==='Familia Guerra');
   if(await page.locator('#family-dialog').isVisible())throw new Error('Valid family was asked to rename again');
+  await showMenu();
   const familySize=await page.locator('#family-button').boundingBox();
-  if(familySize.height<78||familySize.width<230)throw new Error('Family button is too small');
+  if(familySize.height<44||familySize.height>80)throw new Error('Family menu item is not proportionate');
+  if(await page.locator('#site-navigation #family-button').count()!==1||await page.locator('#site-navigation #theme-toggle').count()!==1)throw new Error('Family and theme controls are not in menu');
+  if(await page.locator('#menu-close').isVisible())await page.locator('#menu-close').click();
   const digitSize=await page.locator('#clock-digits').evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
   if(digitSize<56)throw new Error('Timer is too small');
   await page.emulateMedia({reducedMotion:'reduce'});
   if(await page.locator('#clock-digits').evaluate(node=>getComputedStyle(node).animationName)!=='none')throw new Error('Timer ignores reduced motion');
   await page.emulateMedia({reducedMotion:'no-preference'});
-  await page.evaluate(async()=>{await document.fonts.load('64px VT323');await document.fonts.load('32px Audiowide');});
-  if(!(await page.evaluate(()=>document.fonts.check('64px VT323')&&document.fonts.check('32px Audiowide'))))throw new Error('Retro fonts failed to load');
+  if(!(await page.locator('.intro h1').evaluate(node=>getComputedStyle(node).fontFamily.includes('Barlow Condensed'))))throw new Error('Original heading typeface was not restored');
   for(const width of [320,390,844,1280]){
     await page.setViewportSize({width,height:width===844?390:844});
     if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Retro layout overflows');
@@ -150,7 +155,7 @@ async page => {
   await page.evaluate(()=>scrollTo(0,0));
   await page.waitForFunction(()=>getComputedStyle(document.querySelector('#site-navigation')).visibility==='hidden');
   await page.screenshot({path:'output/playwright/retro-timer.png'});
-  await page.locator('#family-button').click();
+  await clickFamily();
   await page.evaluate(()=>{cloud.register=async()=>{throw new Error('Prueba de conexión fallida');};});
   await page.locator('#family-form button').click();
   await page.waitForFunction(()=>document.querySelector('#family-error').textContent==='Prueba de conexión fallida');
@@ -192,11 +197,44 @@ async page => {
   if(await page.locator('#leaderboard .participant-row').count())throw new Error('Participants returned after reload');
   await page.evaluate(async()=>{await cloud.event('open');});
   await page.evaluate(async()=>{await refreshCompetition();});
-  await page.locator('#family-button').click();
+  await clickFamily();
   await page.getByLabel('Nombre de la familia',{exact:true}).fill('Nueva competencia');
   await page.locator('#family-form button').click();
   await page.waitForFunction(()=>participantRecord?.name==='Nueva competencia');
   if(await page.evaluate(()=>unlocked.size)!==0)throw new Error('New registration inherited old unlocks');
   if(await page.evaluate(()=>Date.now()-Date.parse(participantRecord.registered_at))>10000)throw new Error('New registration inherited old clock');
+  await page.evaluate(async()=>{await cloud.logout();localStorage.removeItem('gallery-night:instructions:v1');});
+  await page.goto('http://127.0.0.1:8770/?nfc=la-isla-bonita');
+  await page.locator('#family-dialog').waitFor({state:'visible'});
+  if(!(await page.locator('#family-instructions').isVisible())||await page.locator('#family-instructions li').count()!==6)throw new Error('First visit instructions missing');
+  if(await page.evaluate(()=>document.activeElement.id)!=='family-title')throw new Error('Instructions were skipped by autofocus');
+  if(await page.evaluate(()=>unlocked.has('la-isla-bonita')))throw new Error('NFC consumed before welcome instructions');
+  await page.locator('#family-form button').click();
+  await page.waitForFunction(()=>unlocked.has('la-isla-bonita'));
+  await page.reload();
+  await page.waitForFunction(()=>!!participantRecord);
+  if(await page.locator('#family-dialog').isVisible())throw new Error('Welcome instructions repeated after successful registration');
+  await clickFamily();
+  if(await page.locator('#family-instructions').isVisible())throw new Error('Name edit repeated welcome instructions');
+  await page.locator('#family-dialog').getByRole('button',{name:'Ahora no',exact:true}).click();
+  await showMenu();
+  await page.locator('#site-navigation [data-section="guia"]').click();
+  if(await page.locator('#guia .how > div').count()!==6)throw new Error('Complete instructions unavailable in menu');
+  await page.locator('#guia .route-map img').scrollIntoViewIfNeeded();
+  await page.waitForFunction(()=>document.querySelector('#guia .route-map img').naturalWidth===1997);
+  if(await page.locator('#inicio .route-map img').count()!==1)throw new Error('Home map is missing');
+  if(!(await page.locator('#guia .route-map').textContent()).includes('cuántas etiquetas NFC'))throw new Error('Map count explanation missing');
+  for(const width of [320,390,844,1280]){
+    await page.setViewportSize({width,height:width===844?390:844});
+    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Guide or map overflow');
+  }
+  await page.evaluate(async()=>{await cloud.event('closed');window.__cloudTest.participants=[];await cloud.logout();localStorage.removeItem('gallery-night:instructions:v1');});
+  await page.goto('http://127.0.0.1:8770/');
+  await page.locator('#family-dialog').waitFor({state:'visible'});
+  if(!(await page.locator('#family-instructions').isVisible())||!(await page.locator('#family-form button').isDisabled()))throw new Error('Closed event did not show welcome with registration disabled');
+  await page.locator('#family-dialog').getByRole('button',{name:'Ahora no',exact:true}).click();
+  await page.reload();
+  await page.waitForFunction(()=>!!eventStatus);
+  if(await page.locator('#family-dialog').isVisible())throw new Error('Dismissed instructions repeated');
   return {leaderboard:'public read-only; admin protected',grid:'public and admin verified',theme:'light, dark and live changes verified',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
 }

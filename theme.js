@@ -10,7 +10,7 @@
     document.querySelector('meta[name="theme-color"]').setAttribute('content',dark ? '#071910' : '#145530');
     const button = document.querySelector('#theme-toggle');
     if (button) {
-      button.textContent = dark ? '☾' : '☀';
+      button.textContent = dark ? '☾ Modo oscuro' : '☀ Modo claro';
       button.setAttribute('aria-pressed',String(dark));
       button.title = dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
     }

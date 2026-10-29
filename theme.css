@@ -23,10 +23,3 @@
 :root[data-theme="dark"] .standings-table .song-found { background:#244b33; color:#fff09a; }
 :root[data-theme="dark"] .standings-table .song-missing { color:#bbc9c0; }
 :root[data-theme="dark"] button:focus-visible,:root[data-theme="dark"] a:focus-visible,:root[data-theme="dark"] summary:focus-visible,:root[data-theme="dark"] input:focus-visible,:root[data-theme="dark"] [tabindex]:focus-visible { outline-color:var(--yellow); }
-#theme-toggle { flex-shrink:0; width:44px; min-height:44px; padding:4px; font-size:23px; line-height:1; }
-@media(max-width:750px) and (orientation:portrait) {
- #theme-toggle { grid-column:3; grid-row:1; }
-}
-@media(max-width:1000px) and (orientation:landscape) {
- #theme-toggle { width:40px; min-height:40px; font-size:21px; }
-}
