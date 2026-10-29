@@ -66,7 +66,7 @@ Un reproductor compartido evita superposición. Pausa/Reproducir disponible en e
 - El tema sigue automáticamente la preferencia del sistema hasta que se usa el botón ☀/☾ de la cabecera. La elección manual claro/oscuro se guarda en este navegador y se conserva al recargar. Mantiene los colores escolares, las portadas y el logo originales.
 
 - Organización: email `benjaguerra192@gmail.com` y la contraseña creada en Supabase. La sesión persiste hasta cerrar sesión o borrar los datos del navegador. Se usa almacenamiento del SDK, no cookies HttpOnly; las sesiones de administrador y visitante están separadas.
-- El reloj comienza al registrar la familia. Se detiene al conseguir las ocho canciones. El ranking ordena a quienes completaron por menor duración; muestra registro, finalización y horario de cada desbloqueo en hora argentina.
+- El reloj comienza al registrar la familia. Se detiene al responder los ocho desafíos, también con errores. El ranking ordena a quienes terminaron por más aciertos y luego menor duración; muestra registro, finalización y horario de cada desbloqueo en hora argentina.
 - Actualización automática: leaderboard cada 10 segundos; visitante cada 15 segundos. Los relojes avanzan cada segundo. **Actualizar** permite refrescar el leaderboard manualmente.
 - Abrir, cerrar, cerrar hasta una fecha o programar una ventana desde Organización. Fechas en hora argentina. Cerrar bloquea registros y desbloqueos nuevos; permite escuchar lo conseguido. El tiempo transcurrido sigue contando durante el cierre.
 - Se puede borrar un desbloqueo, todos los de una familia conservando su reloj, reiniciar tiempo y avance, eliminar una familia o eliminar todos los participantes. Siempre se actualiza el leaderboard antes de pedir confirmación. El borrado global muestra un diálogo dentro de la web con la clasificación actual y exige escribir `BORRAR` (acepta minúsculas y espacios alrededor). Vacía participantes, relojes y desbloqueos; conserva el estado de apertura y la cuenta administradora. Después, cada familia puede volver a registrarse desde cero si el recorrido está abierto.
@@ -76,6 +76,12 @@ Un reproductor compartido evita superposición. Pausa/Reproducir disponible en e
 
 Se requiere Internet para registrar o desbloquear. Mantener Anonymous Sign-Ins activado. Antes del evento, revisar los límites de autenticación anónima de Supabase para muchos teléfonos compartiendo el WiFi escolar y hacer una prueba de carga. No borrar los datos del navegador de una familia durante el recorrido: perdería su acceso anónimo.
 
-Sin configuración de Supabase existe un modo demo local, sin ranking real; su contraseña histórica no otorga permisos en la base de datos.
+Cada NFC nuevo abre un desafío con tres opciones persistidas por el servidor. La canción se escucha sin mostrar artista ni portada. Acertar desbloquea; fallar pierde esa canción sin reintento, pero mantiene la elegibilidad para el premio. El servidor conserva la primera respuesta, incluso con recargas o reintentos de red. Organización puede borrar una respuesta (también incorrecta), todas las respuestas, o reiniciar tiempo y avance. Los desbloqueos anteriores a esta función se conservan como aciertos.
+
+Los enlaces NFC existentes siguen funcionando. Sus identificadores y los archivos estáticos permiten deducir la canción al inspeccionar la URL o el código: este juego escolar no valida presencia física ni evita trampas con herramientas de desarrollo.
+
+Sin configuración de Supabase existe un modo demo local anterior, sin desafíos ni ranking real; su contraseña histórica no otorga permisos en la base de datos.
 
 Pruebas SQL aisladas (nunca producción): `npm install --prefix output/testdeps --no-save --package-lock=false --ignore-scripts @electric-sql/pglite@0.3.14`, después `node verify-database.cjs output/testdeps/node_modules/@electric-sql/pglite/dist/index.cjs`. Cubren aislamiento, permisos, horarios, primeros desbloqueos, cierre, ranking y borrados. Prueba de interfaz con API simulada: servir el sitio en puerto 8770 y ejecutar `npx --package @playwright/cli playwright-cli -s=competition run-code --filename=tests/cloud-browser.js` tras abrir la sesión. No sustituye una prueba NFC física ni una prueba de carga.
+
+Prueba del desafío (audio, tres opciones, error permanente, 7/8, ranking y tamaños): `npx --package @playwright/cli playwright-cli -s=competition run-code --filename=tests/quiz-browser.js`. Usa una API simulada; no escribe participantes reales.

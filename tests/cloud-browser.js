@@ -12,6 +12,7 @@ async page => {
     const me=()=>({participant:state.participants.find(p=>p.id==='c')||null,event:state.event,server_now:new Date().toISOString()});
     window.__cloudTest=state;window.confirm=message=>{state.lastConfirmation=message;return !!state.confirmAnswer;};
     window.galleryCloud={me:async()=>me(),restoreAdmin:async()=>state.admin?snapshot():null,
+      challenge:async id=>window.galleryCloud.unlock(id),
       register:async name=>{let p=state.participants.find(p=>p.id==='c');if(!state.event.is_open&&!p)throw new Error('El recorrido está cerrado.');if(!p){p={...entry('c',name,0,0),registered_at:new Date().toISOString()};state.participants.push(p);}p.name=name;save();return me()},
       unlock:async id=>{if(!state.event.is_open)throw new Error('El recorrido está cerrado.');const p=me().participant;if(!p.unlocks.some(u=>u.song_id===id))p.unlocks.push({song_id:id,unlocked_at:new Date().toISOString()});save();return me()},
       leave:async()=>{state.leaveCalls=(state.leaveCalls||0)+1;if(state.failLeave)throw new Error('No se pudo borrar tu participante');state.participants=state.participants.filter(p=>p.id!=='c');state.participantSession=false;save();return me()},

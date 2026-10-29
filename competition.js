@@ -1,4 +1,4 @@
-let participantRecord = null, eventStatus = null, serverOffset = 0, syncingCloud = false, cloudError = '', cloudRevision = 0, leavingParticipant = false;
+let eventStatus = null, serverOffset = 0, syncingCloud = false, cloudError = '', cloudRevision = 0, leavingParticipant = false;
 
 function serverTime() { return Date.now() + serverOffset; }
 function elapsedText(milliseconds) {
@@ -69,7 +69,10 @@ async function unlockRemote(id) {
   if (!song) { notify('Este NFC no corresponde a una canción del recorrido.'); return false; }
   const already = unlocked.has(id);
   try {
-    applyCloudState(await cloud.unlock(id));
+    const state = await cloud.challenge(id);
+    applyCloudState(state);
+    if(state.challenge) { showQuiz(song,state.challenge); return true; }
+    if(!unlocked.has(id)) { showQuizResult(song); return true; }
     albumIndex = visibleSongs().findIndex(item => item.id === id);
     navigateTo('albumes'); render(); revealAlbum(); showSong(song, already);
     return true;

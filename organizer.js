@@ -7,7 +7,7 @@ function sortLeaderboard(participants) {
     const aComplete = !!a.completed_at && !a.is_test, bComplete = !!b.completed_at && !b.is_test;
     if (aComplete !== bComplete) return aComplete ? -1 : 1;
     if (a.is_test !== b.is_test) return a.is_test ? 1 : -1;
-    if (aComplete) return a.elapsed_ms - b.elapsed_ms || Date.parse(a.completed_at) - Date.parse(b.completed_at);
+    if (aComplete) return b.unlocks.length-a.unlocks.length || a.elapsed_ms - b.elapsed_ms || Date.parse(a.completed_at) - Date.parse(b.completed_at);
     return b.unlocks.length - a.unlocks.length || Date.parse(a.registered_at) - Date.parse(b.registered_at);
   });
 }
@@ -41,12 +41,13 @@ function renderOrganizer(snapshot) {
     const place = p.completed_at && !p.is_test ? '#' + (++rank) : '—';
     const elapsed = p.completed_at ? elapsedText(p.elapsed_ms) : '<span data-running-since="' + p.registered_at + '">' + elapsedText(Date.now() + organizerOffset - Date.parse(p.registered_at)) + '</span>';
     const completed = p.is_test ? 'PRUEBA · SIN PREMIO' : p.completed_at ? 'COMPLETADO' : 'EN CURSO';
-    const actions = '<div class="participant-actions"><button data-admin-action="clear_unlocks" data-target="'+p.id+'">Borrar desbloqueos</button><button data-admin-action="restart" data-target="'+p.id+'">Reiniciar tiempo y avance</button><button class="danger" data-admin-action="delete_participant" data-target="'+p.id+'">Eliminar participante</button></div>';
+    const actions = '<div class="participant-actions"><button data-admin-action="clear_unlocks" data-target="'+p.id+'">Borrar respuestas y desbloqueos</button><button data-admin-action="restart" data-target="'+p.id+'">Reiniciar tiempo y avance</button><button class="danger" data-admin-action="delete_participant" data-target="'+p.id+'">Eliminar participante</button></div>';
     const tracks = songs.map(song => {
       const unlock = p.unlocks.find(u => u.song_id === song.id);
-      return '<li><div><strong>'+escapeHtml(song.title)+'</strong><span>'+ (unlock ? dateText(unlock.unlocked_at) : 'Sin desbloquear')+'</span></div>'+(unlock?'<button class="danger" data-admin-action="delete_unlock" data-target="'+p.id+'" data-track="'+song.id+'">Borrar</button>':'')+'</li>';
+      const attempt = p.attempts?.find(a=>a.song_id===song.id);
+      return '<li><div><strong>'+escapeHtml(song.title)+'</strong><span>'+ (unlock ? '✓ '+dateText(unlock.unlocked_at) : attempt ? '✕ Incorrecta · '+dateText(attempt.answered_at) : 'Sin responder')+'</span></div>'+(unlock||attempt?'<button class="danger" data-admin-action="delete_unlock" data-target="'+p.id+'" data-track="'+song.id+'">Borrar</button>':'')+'</li>';
     }).join('');
-    return '<details class="participant-row" data-participant="'+p.id+'" '+(expanded.has(p.id)?'open':'')+'><summary><span class="rank">'+place+'</span><span class="participant-name">'+escapeHtml(p.name)+'<small>'+completed+'</small></span><span class="participant-score">'+p.unlocks.length+'/8<small>'+elapsed+'</small></span></summary><div class="participant-detail"><p>Registro: '+dateText(p.registered_at)+'<br>Finalización: '+dateText(p.completed_at)+'</p><ul>'+tracks+'</ul>'+actions+'</div></details>';
+    return '<details class="participant-row" data-participant="'+p.id+'" '+(expanded.has(p.id)?'open':'')+'><summary><span class="rank">'+place+'</span><span class="participant-name">'+escapeHtml(p.name)+'<small>'+completed+'</small></span><span class="participant-score">'+p.unlocks.length+'/8 aciertos<small>'+answeredSongs(p)+'/8 respondidas · '+elapsed+'</small></span></summary><div class="participant-detail"><p>Registro: '+dateText(p.registered_at)+'<br>Finalización: '+dateText(p.completed_at)+'</p><ul>'+tracks+'</ul>'+actions+'</div></details>';
   }).join('') : '<p class="empty-leaderboard">Todavía no hay participantes registrados.</p>';
   $('#organizer-grid').innerHTML = participantGrid(participants, true);
   updateLeaderboardTimes();
@@ -90,9 +91,9 @@ async function unlockAllRemote() {
 }
 function deleteDescription(action, person, track) {
   const name = '«' + person.name + '»';
-  if (action === 'delete_unlock') return 'Borrar el desbloqueo de «' + songs.find(s => s.id === track)?.title + '» de ' + name + '. Su posición se recalculará.';
-  if (action === 'clear_unlocks') return 'Borrar los ' + person.unlocks.length + ' desbloqueos de ' + name + '. Conserva su hora de registro; el reloj sigue contando.';
-  if (action === 'restart') return 'Borrar todos los desbloqueos de ' + name + ' y comenzar su tiempo desde cero ahora.';
+  if (action === 'delete_unlock') return 'Borrar respuesta y desbloqueo de «' + songs.find(s => s.id === track)?.title + '» de ' + name + '. Podrá intentar esa canción otra vez. Su posición se recalculará.';
+  if (action === 'clear_unlocks') return 'Borrar todas las respuestas y desbloqueos de ' + name + '. Conserva su hora de registro; el reloj sigue contando.';
+  if (action === 'restart') return 'Borrar todas las respuestas y desbloqueos de ' + name + ' y comenzar su tiempo desde cero ahora.';
   return 'Eliminar a ' + name + ', su registro y todos sus desbloqueos. No se puede deshacer.';
 }
 async function confirmAdminDelete(action, target = null, track = null) {

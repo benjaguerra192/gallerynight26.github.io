@@ -25,6 +25,8 @@
       return rpc(participant, 'gn_register', { participant_name: name });
     },
     unlock: id => rpc(participant, 'gn_unlock', { track: id }),
+    challenge: id => rpc(participant, 'gn_challenge', {track:id}),
+    answer: (id,choice) => rpc(participant, 'gn_answer', {track:id,choice}),
     async leave() {
       const state = await rpc(participant, 'gn_leave', {confirmation:'SALIR'});
       try {

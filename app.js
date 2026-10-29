@@ -14,6 +14,9 @@ const cloud=window.galleryCloud;
 const key='en-frecuencia:v1';
 const $=s=>document.querySelector(s);
 let unlocked=new Set(),filter='all',toastTimer,albumIndex=0,adminUnlocked=false;
+let participantRecord=null;
+function answeredSongs(person) { return person?.attempts?.length ?? person?.unlocks?.length ?? 0; }
+function failedSong(id) { return cloud && participantRecord?.attempts?.some(a=>a.song_id===id&&!a.correct); }
 const viewKey='gallery-night:album-view';
 let albumView='carousel';
 try{if(localStorage.getItem(viewKey)==='grid')albumView='grid'}catch{}
@@ -52,6 +55,7 @@ function render(){
  $('#all-count').textContent=String(total).padStart(2,'0');
  $('#progress').style.width=(n/total*100)+'%';
  $('#progress-copy').textContent=n===total?'Colección completa. ¡Gracias por compartir este recorrido!':n?'Ya encontraron '+n+' de '+total+' canciones. ¡A buscar la próxima!':total+' canciones por descubrir. Su colección empieza con un escaneo.';
+ if(cloud&&participantRecord)$('#progress-copy').textContent=n+' aciertos · '+answeredSongs(participantRecord)+'/8 respondidas. '+(participantRecord.completed_at?'¡Recorrido terminado! Mirá el ranking.':'Escuchá y adiviná la próxima.');
  const visible=visibleSongs();$('#empty').hidden=visible.length>0;
  albumIndex=visible.length?Math.min(albumIndex,visible.length-1):0;
  $('#album-carousel').hidden=visible.length===0;
@@ -67,8 +71,9 @@ function render(){
  $('#album-position').textContent=visible.length?'ÁLBUM '+(albumIndex+1)+' / '+visible.length+' · '+(unlocked.has(visible[albumIndex].id)?visible[albumIndex].title:'Por descubrir'):'';
  $('#songs').innerHTML=(grid?visible:visible.slice(albumIndex,albumIndex+1)).map(s=>{
   const open=unlocked.has(s.id),number=String(songs.indexOf(s)+1).padStart(2,'0');
-  const art=open?(s.cover?'<img class="album-cover" src="'+coverUrl(s)+'" alt="Portada: '+s.album+'" width="640" height="640" decoding="async">':'<div class="art-type" aria-hidden="true">'+s.type.replace('\n','<br>')+'</div>'):'<div class="locked-cover">'+lockIcon+'<strong>POR DESCUBRIR</strong><span>Escaneá su NFC</span></div>';
-  return '<article '+(open?'data-preview="'+s.id+'" tabindex="0" aria-label="Escuchar '+s.title+'" ':'')+'class="card '+(open?'unlocked':'locked')+'"><div class="art" style="--art:'+(s.color||'#145530')+'">'+art+'<span class="card-number">TRACK '+number+'</span></div><div class="card-body"><div class="card-meta"><span>MUSICAL HUNT</span><img class="school-logo mini-logo" src="assets/logo-sanlucas.png" alt="" width="28" height="28"></div><h3>'+(open?s.title:'Canción misteriosa')+'</h3><p class="artist">'+(open?s.artist:'Un nuevo encuentro')+'</p><div class="card-bottom">'+(open?'<button data-song="'+s.id+'">Escuchar ↗</button>':'<span>🔒 Bloqueada</span>')+'</div></div></article>';
+  const missed=failedSong(s.id);
+  const art=open?(s.cover?'<img class="album-cover" src="'+coverUrl(s)+'" alt="Portada: '+s.album+'" width="640" height="640" decoding="async">':'<div class="art-type" aria-hidden="true">'+s.type.replace('\n','<br>')+'</div>'):'<div class="locked-cover">'+lockIcon+'<strong>'+(missed?'INTENTO PERDIDO':'POR DESCUBRIR')+'</strong><span>'+(missed?'Seguí buscando las demás':'Escaneá su NFC')+'</span></div>';
+  return '<article '+(open?'data-preview="'+s.id+'" tabindex="0" aria-label="Escuchar '+s.title+'" ':'')+'class="card '+(open?'unlocked':missed?'locked missed':'locked')+'"><div class="art" style="--art:'+(s.color||'#145530')+'">'+art+'<span class="card-number">TRACK '+number+'</span></div><div class="card-body"><div class="card-meta"><span>MUSICAL HUNT</span><img class="school-logo mini-logo" src="assets/logo-sanlucas.png" alt="" width="28" height="28"></div><h3>'+(open?s.title:'Canción misteriosa')+'</h3><p class="artist">'+(open?s.artist:'Un nuevo encuentro')+'</p><div class="card-bottom">'+(open?'<button data-song="'+s.id+'">Escuchar ↗</button>':missed?'<span>✕ Respuesta incorrecta</span>':'<span>🔒 Bloqueada</span>')+'</div></div></article>';
  }).join('');
  syncAlbumAudio();
 }
@@ -148,7 +153,7 @@ $('#admin-lock').addEventListener('click',()=>{if(cloud){logoutOrganizer();retur
 $('#admin-unlock-all').addEventListener('click',()=>{if(!adminUnlocked)return;if(cloud){unlockAllRemote();return}unlocked=new Set(songs.map(s=>s.id));const saved=save();render();if(saved)notify('Las 8 canciones están desbloqueadas en este navegador.');});
 
 function syncAlbumAudio(){
- if($('#song-dialog').open)return;
+ if($('#song-dialog').open||$('#quiz-dialog').open)return;
  const song=visibleSongs()[albumIndex];
  if(currentSection==='albumes' && albumView==='carousel' && song && unlocked.has(song.id))playPreview(song);
  else pausePreview(true);
