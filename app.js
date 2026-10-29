@@ -128,13 +128,14 @@ function rememberInstructions(){try{localStorage.setItem(instructionsKey,'seen')
 function readFamily(){try{return (localStorage.getItem(familyKey)||'').trim().slice(0,40)}catch{return ''}}
 let familyName=cloud?'':readFamily();
 function isGenericFamily(name){return ['','tu familia','familia','mi familia'].includes(name.trim().replace(/\s+/g,' ').toLocaleLowerCase('es'))}
-function renderFamily(){const generic=isGenericFamily(familyName);$('#family-display').textContent=generic?'Ingresá tu familia':familyName;$('#family-hint').textContent=generic?'Tocá acá para agregar el nombre':'Tocá acá para cambiar el nombre';$('#family-button').setAttribute('aria-label',generic?'Ingresar nombre de la familia':'Cambiar nombre de la familia '+familyName)}
+function renderFamily(){const generic=isGenericFamily(familyName),label=generic?'Ingresar nombre de la familia':'Cambiar nombre de la familia '+familyName;$('#family-display').textContent=generic?'Ingresá tu familia':familyName;$('#header-family-display').textContent=generic?'Tu familia':familyName;$('#family-hint').textContent=generic?'Tocá acá para agregar el nombre':'Tocá acá para cambiar el nombre';$('#family-button').setAttribute('aria-label',label);$('#family-header-button').setAttribute('aria-label',label);$('#family-header-button').title=generic?'Ingresá el nombre de tu familia':familyName;$('#participant-logout').hidden=!familyName}
 function setFamily(value){if(cloud)return registerFamily(value);const name=value.trim().replace(/\s+/g,' ');if(isGenericFamily(name)||name.length>40){$('#family-error').textContent='Escribí el nombre de tu familia, hasta 40 caracteres.';return false}familyName=name;try{localStorage.setItem(familyKey,name)}catch{notify('El nombre se conservará solo mientras esta página esté abierta.')}renderFamily();rememberInstructions();$('#family-error').textContent='';$('#family-dialog').close();consumeLink();return true}
 $('#family-form').addEventListener('submit',e=>{e.preventDefault();setFamily($('#family-name').value)});
 $('#family-dialog').addEventListener('cancel',e=>{if(!familyName&&!cloud)e.preventDefault()});
 $('#family-dialog').addEventListener('close',()=>{if(!$('#family-instructions').hidden)rememberInstructions()});
 function askFamilyName(){setMenu(false);const first=needsInstructions();$('#family-instructions').hidden=!first;$('#family-name').value=isGenericFamily(familyName)?'':familyName;$('#family-error').textContent='';openDialog($('#family-dialog'));if(first){$('#family-title').focus();$('#family-dialog').scrollTop=0}else $('#family-name').focus()}
 $('#family-button').addEventListener('click',askFamilyName);
+$('#family-header-button').addEventListener('click',askFamilyName);
 $('#family-guide-link').addEventListener('click',event=>{event.preventDefault();$('#family-dialog').close();navigateTo('guia')});
 renderFamily();
 unlocked=cloud?new Set():readProgress();render();renderLinks();if(!cloud){if(!isGenericFamily(familyName)&&!needsInstructions())consumeLink();else askFamilyName()}

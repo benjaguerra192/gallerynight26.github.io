@@ -25,6 +25,16 @@
       return rpc(participant, 'gn_register', { participant_name: name });
     },
     unlock: id => rpc(participant, 'gn_unlock', { track: id }),
+    async leave() {
+      const state = await rpc(participant, 'gn_leave', {confirmation:'SALIR'});
+      try {
+        const { error } = await participant.auth.signOut({ scope:'local' });
+        if(error)throw error;
+      } catch {
+        throw Object.assign(new Error('Tu participante ya fue eliminado. No se pudo cerrar el acceso; volvé a intentar para terminar.'),{deletedState:state});
+      }
+      return state;
+    },
     async restoreAdmin() {
       const { data, error } = await admin.auth.getSession();
       if (error) throw error;

@@ -1,4 +1,4 @@
-let participantRecord = null, eventStatus = null, serverOffset = 0, syncingCloud = false, cloudError = '', cloudRevision = 0;
+let participantRecord = null, eventStatus = null, serverOffset = 0, syncingCloud = false, cloudError = '', cloudRevision = 0, leavingParticipant = false;
 
 function serverTime() { return Date.now() + serverOffset; }
 function elapsedText(milliseconds) {
@@ -6,6 +6,7 @@ function elapsedText(milliseconds) {
   return [Math.floor(total / 3600), Math.floor(total / 60) % 60, total % 60].map(n => String(n).padStart(2, '0')).join('.');
 }
 function applyCloudState(state) {
+  const hadName=!isGenericFamily(familyName);
   cloudRevision++;
   eventStatus = state.event;
   const time = state.server_now || state.event?.server_now;
@@ -14,6 +15,7 @@ function applyCloudState(state) {
   familyName = participantRecord?.name || '';
   unlocked = new Set((participantRecord?.unlocks || []).map(item => item.song_id));
   renderFamily(); render(); renderCompetition();
+  if(hadName&&isGenericFamily(familyName)&&!leavingParticipant&&!document.querySelector('dialog[open]'))askFamilyName();
 }
 function renderCompetition() {
   if (!cloud) return;
@@ -32,7 +34,7 @@ function renderCompetition() {
   $('#reset').hidden = true;
   $('#reset').parentElement.querySelector('p').textContent = 'El tiempo cuenta desde el registro. Los reinicios los gestiona Organización.';
   const submit = $('#family-form button');
-  submit.disabled = syncingCloud || (!participantRecord && !eventStatus?.is_open);
+  submit.disabled = syncingCloud || leavingParticipant || (!participantRecord && !eventStatus?.is_open);
   $('#family-name').disabled = syncingCloud;
   if (!participantRecord && eventStatus && !eventStatus.is_open) $('#family-error').textContent = 'El recorrido está cerrado. Esperá la apertura para registrarte.';
   else if ($('#family-error').textContent === 'El recorrido está cerrado. Esperá la apertura para registrarte.') $('#family-error').textContent = '';
@@ -40,7 +42,7 @@ function renderCompetition() {
 async function registerFamily(name) {
   name = name.trim().replace(/\s+/g, ' ');
   if (isGenericFamily(name) || name.length > 40) { $('#family-error').textContent = 'Escribí el nombre de tu familia, hasta 40 caracteres.'; return false; }
-  if (syncingCloud) return false;
+  if (syncingCloud || leavingParticipant) return false;
   $('#family-error').textContent = '';
   syncingCloud = true; setRegistrationBusy(true); renderCompetition();
   try {
@@ -61,6 +63,7 @@ function setRegistrationBusy(busy) {
   $('#family-later').disabled = busy;
 }
 async function unlockRemote(id) {
+  if(leavingParticipant) return false;
   if (!participantRecord || isGenericFamily(familyName)) { askFamilyName(); return false; }
   const song = songs.find(item => item.id === id);
   if (!song) { notify('Este NFC no corresponde a una canción del recorrido.'); return false; }
@@ -74,7 +77,7 @@ async function unlockRemote(id) {
 }
 let consumingNfc = false;
 async function consumeRemoteLink() {
-  if (!participantRecord || consumingNfc || isGenericFamily(familyName) || $('#family-dialog').open) return;
+  if (!participantRecord || leavingParticipant || consumingNfc || isGenericFamily(familyName) || $('#family-dialog').open) return;
   const params = new URLSearchParams(location.search);
   if (!params.has('nfc')) return;
   consumingNfc = true;
@@ -88,7 +91,7 @@ async function consumeRemoteLink() {
   } finally { consumingNfc = false; }
 }
 async function refreshCompetition() {
-  if (!cloud || syncingCloud || document.hidden) return;
+  if (!cloud || syncingCloud || leavingParticipant || document.hidden) return;
   syncingCloud = true;
   const revision = cloudRevision;
   // A polling response must not replace a newer successful unlock.
@@ -109,7 +112,7 @@ async function startCompetition() {
   await restoreOrganizer();
   refreshPublicLeaderboard();
   const firstWelcome = !adminUnlocked && currentSection !== 'ranking' && needsInstructions();
-  const needsName = isGenericFamily(familyName) && (participantRecord || (!adminUnlocked && currentSection !== 'ranking' && eventStatus?.is_open));
+  const needsName = isGenericFamily(familyName);
   if ((firstWelcome || needsName) && !$('#admin-dialog').open) askFamilyName();
   await consumeRemoteLink();
   setInterval(refreshCompetition, 15000);
@@ -117,3 +120,36 @@ async function startCompetition() {
 }
 
 if (cloud) startCompetition();
+
+$('#participant-logout').addEventListener('click',()=>{
+  setMenu(false);
+  $('#leave-summary').textContent='Se eliminará «'+familyName+'» del ranking junto con todos sus desbloqueos y su tiempo. No se puede deshacer. Para volver a jugar tendrás que registrarte desde cero.';
+  $('#leave-error').textContent='';
+  openDialog($('#leave-dialog'));
+});
+$('#leave-confirm').addEventListener('click',async()=>{
+  if($('#leave-confirm').disabled) return;
+  $('#leave-confirm').disabled=true;
+  $('#leave-cancel').disabled=true;
+  $('#leave-confirm').textContent='Cerrando sesión…';
+  leavingParticipant=true;syncingCloud=true;cloudRevision++;
+  try {
+    const state=cloud?await cloud.leave():null;
+    pausePreview(true);
+    try {localStorage.removeItem(key);localStorage.removeItem(familyKey);}catch{}
+    const url=new URL(location.href);url.searchParams.delete('nfc');history.replaceState(null,'',url.pathname+url.search+url.hash);
+    if(cloud) applyCloudState(state);else {familyName='';unlocked.clear();renderFamily();render();}
+    publicSnapshot=null;$('#public-list').replaceChildren();$('#public-grid').replaceChildren();$('#public-total').textContent='';
+    $('#leave-dialog').close();navigateTo('inicio');
+    if(cloud&&adminUnlocked)refreshOrganizer();
+    notify('Sesión cerrada. Tu participante y tu avance fueron eliminados.');
+    askFamilyName();
+  } catch(error) {
+    if(error.deletedState)applyCloudState(error.deletedState);
+    $('#leave-error').textContent=error.message;
+  } finally {
+    leavingParticipant=false;syncingCloud=false;$('#leave-confirm').disabled=false;$('#leave-cancel').disabled=false;$('#leave-confirm').textContent='Sí, borrar y cerrar sesión';
+    if(cloud)renderCompetition();
+  }
+});
+$('#leave-dialog').addEventListener('cancel',event=>{if(leavingParticipant)event.preventDefault();});

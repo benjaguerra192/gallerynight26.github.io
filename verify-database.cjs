@@ -31,6 +31,7 @@ async function denied(action) { await assert.rejects(action, /permission denied|
   assert.equal((await call('gn_status')).is_open,true);
   await denied(() => call('gn_admin_snapshot'));
   await denied(() => call('gn_register',['intruder']));
+  await denied(() => call('gn_leave',['SALIR']));
   await denied(() => db.query('select * from public.gn_participants'));
 
   await identity(ids.alice);
@@ -55,6 +56,7 @@ async function denied(action) { await assert.rejects(action, /permission denied|
   assert.equal((await call('gn_me')).participant,null);
   await call('gn_register',['Familia Dos']);
   assert.equal((await call('gn_me')).participant.unlocks.length,0);
+
 
   await identity(ids.admin);
   let snapshot = await call('gn_admin_event',['closed',null,null]);
@@ -131,5 +133,25 @@ async function denied(action) { await assert.rejects(action, /permission denied|
   await identity(ids.alice);
   await call('gn_register',['Nuevo intento']);
   assert.equal((await call('gn_me')).participant.unlocks.length,0);
+  await call('gn_unlock',[tracks[0]]);
+  await denied(()=>call('gn_leave',[null]));
+  await identity(ids.bob);
+  await call('gn_register',['Familia que permanece']);
+  await call('gn_unlock',[tracks[1]]);
+  await identity(ids.admin);
+  await call('gn_admin_event',['closed',null,null]);
+  await identity(ids.alice);
+  const left=await call('gn_leave',['SALIR']);
+  assert.equal(left.participant,null);
+  assert.equal((await call('gn_me')).participant,null);
+  await call('gn_leave',['SALIR']);
+  await identity(ids.admin);
+  const remaining=await call('gn_admin_snapshot');
+  assert.equal(remaining.participants.length,1);
+  assert.equal(remaining.participants[0].id,ids.bob);
+  assert.equal(remaining.participants[0].unlocks.length,1);
+  await db.exec('reset role');
+  assert.equal((await db.query('select count(*)::int total from public.gn_unlocks where participant_id=$1',[ids.alice])).rows[0].total,0);
+  assert.equal((await db.query('select count(*)::int total from public.gn_admins')).rows[0].total,1);
   console.log('OK: SQL auth/RLS, server timestamps, immutable scans, closed/scheduled event, completion, admin CRUD, test exclusion and restart.');
 })().catch(error=>{console.error(error);process.exitCode=1}).finally(()=>db.close());

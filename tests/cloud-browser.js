@@ -1,6 +1,6 @@
 async page => {
   const showMenu=async()=>{if(await page.locator('#menu-toggle').isVisible()&&!await page.locator('#site-navigation').isVisible())await page.locator('#menu-toggle').click();};
-  const clickFamily=async()=>{await showMenu();await page.locator('#family-button').click();};
+  const clickFamily=async()=>{if(await page.locator('#family-dialog').isVisible())return;if(await page.locator('#family-header-button').isVisible())await page.locator('#family-header-button').click();else {await showMenu();await page.locator('#family-button').click();}};
   const clickTheme=async()=>{await showMenu();await page.getByRole('button',{name:'Modo oscuro',exact:true}).click();};
   const fixture = `(() => {
     const tracks=['billie-jean','take-on-me','with-or-without-you','sweet-dreams','every-breath-you-take','bohemian-rhapsody','sweet-child','la-isla-bonita'];
@@ -14,6 +14,7 @@ async page => {
     window.galleryCloud={me:async()=>me(),restoreAdmin:async()=>state.admin?snapshot():null,
       register:async name=>{let p=state.participants.find(p=>p.id==='c');if(!state.event.is_open&&!p)throw new Error('El recorrido está cerrado.');if(!p){p={...entry('c',name,0,0),registered_at:new Date().toISOString()};state.participants.push(p);}p.name=name;save();return me()},
       unlock:async id=>{if(!state.event.is_open)throw new Error('El recorrido está cerrado.');const p=me().participant;if(!p.unlocks.some(u=>u.song_id===id))p.unlocks.push({song_id:id,unlocked_at:new Date().toISOString()});save();return me()},
+      leave:async()=>{state.leaveCalls=(state.leaveCalls||0)+1;if(state.failLeave)throw new Error('No se pudo borrar tu participante');state.participants=state.participants.filter(p=>p.id!=='c');state.participantSession=false;save();return me()},
       leaderboard:async()=>({server_now:new Date().toISOString(),participants:state.participants.map(({id,registered_at,...p})=>({...p,unlocks:p.unlocks.map(({song_id})=>({song_id}))}))}),
       login:async()=>{state.admin=true;save();return snapshot()},logout:async()=>{state.admin=false;save()},snapshot:async()=>snapshot(),
       event:async(mode,opens_at,closes_at)=>{state.event={mode,opens_at,closes_at,is_open:mode==='open'};save();return snapshot()},
@@ -137,9 +138,9 @@ async page => {
   await page.waitForFunction(()=>document.querySelector('#family-display').textContent==='Familia Guerra');
   if(await page.locator('#family-dialog').isVisible())throw new Error('Valid family was asked to rename again');
   await showMenu();
-  const familySize=await page.locator('#family-button').boundingBox();
+  const familySize=await page.locator('#family-header-button').boundingBox();
   if(familySize.height<44||familySize.height>80)throw new Error('Family menu item is not proportionate');
-  if(await page.locator('#site-navigation #family-button').count()!==1||await page.locator('#site-navigation #theme-toggle').count()!==1)throw new Error('Family and theme controls are not in menu');
+  if(await page.locator('#site-navigation #family-button').isVisible()||!await page.locator('#family-header-button').isVisible()||await page.locator('#site-navigation #theme-toggle').count()!==1)throw new Error('Mobile family or theme control misplaced');
   if(await page.locator('#menu-close').isVisible())await page.locator('#menu-close').click();
   const digitSize=await page.locator('#clock-digits').evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
   if(digitSize<56)throw new Error('Timer is too small');
@@ -235,6 +236,32 @@ async page => {
   await page.locator('#family-dialog').getByRole('button',{name:'Ahora no',exact:true}).click();
   await page.reload();
   await page.waitForFunction(()=>!!eventStatus);
-  if(await page.locator('#family-dialog').isVisible())throw new Error('Dismissed instructions repeated');
+  if(!(await page.locator('#family-dialog').isVisible())||await page.locator('#family-instructions').isVisible())throw new Error('Default name did not prompt again, or instructions repeated');
+  await page.locator('#family-dialog').getByRole('button',{name:'Ahora no',exact:true}).click();
+  await page.evaluate(async()=>{await cloud.event('open');await refreshCompetition();});
+  await clickFamily();
+  await page.getByLabel('Nombre de la familia',{exact:true}).fill('Familia para salir');
+  await page.locator('#family-form button').click();
+  await page.waitForFunction(()=>participantRecord?.name==='Familia para salir');
+  await page.evaluate(async()=>{await unlockRemote('billie-jean');document.querySelectorAll('dialog[open]').forEach(d=>d.close());});
+  await showMenu();
+  await page.locator('#participant-logout').click();
+  await page.locator('#leave-dialog').waitFor({state:'visible'});
+  await page.locator('#leave-cancel').click();
+  if(await page.evaluate(()=>window.__cloudTest.leaveCalls||0)!==0)throw new Error('Cancelled logout deleted participant');
+  await showMenu();await page.locator('#participant-logout').click();
+  await page.evaluate(()=>{window.__cloudTest.failLeave=true;});
+  await page.locator('#leave-confirm').click();
+  await page.waitForFunction(()=>document.querySelector('#leave-error').textContent==='No se pudo borrar tu participante');
+  if(await page.evaluate(()=>unlocked.size)!==1)throw new Error('Failed logout cleared progress');
+  await page.evaluate(()=>{window.__cloudTest.failLeave=false;});
+  await page.locator('#leave-confirm').click();
+  await page.waitForFunction(()=>participantRecord===null&&!leavingParticipant);
+  if(await page.evaluate(()=>unlocked.size)!==0||await page.evaluate(()=>window.__cloudTest.participantSession)!==false)throw new Error('Logout retained progress or login');
+  if(await page.evaluate(()=>window.__cloudTest.participants.some(p=>p.id==='c')))throw new Error('Logout retained leaderboard entry');
+  await page.locator('#family-dialog').waitFor({state:'visible'});
+  await page.reload();
+  await page.locator('#family-dialog').waitFor({state:'visible'});
+  if(await page.evaluate(()=>!!participantRecord||unlocked.size>0))throw new Error('Logout did not persist');
   return {leaderboard:'public read-only; admin protected',grid:'public and admin verified',theme:'light, dark and live changes verified',names:'escaped',delete:'cancel and confirm verified',session:'remembered after reload; logout verified',event:'close verified',widths};
 }

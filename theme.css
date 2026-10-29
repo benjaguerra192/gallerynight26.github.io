@@ -18,6 +18,7 @@
 :root[data-theme="dark"] input,:root[data-theme="dark"] .admin-panel select { background:#0c1e14; color:var(--ink); border-color:#729b80; }
 :root[data-theme="dark"] .locked-cover,:root[data-theme="dark"] .card.locked .art { background:#303a34; color:#d8dfda; }
 :root[data-theme="dark"] #family-error,:root[data-theme="dark"] #leaderboard-error,:root[data-theme="dark"] #public-error { color:#ff96a2; }
+:root[data-theme="dark"] #leave-error { color:#ff96a2; }
 :root[data-theme="dark"] .standings-table th,:root[data-theme="dark"] .standings-table td { border-color:#577b64; }
 :root[data-theme="dark"] .standings-table thead { background:#244b33; color:var(--ink); }
 :root[data-theme="dark"] .standings-table .song-found { background:#244b33; color:#fff09a; }
