@@ -12,14 +12,18 @@ async page => {
  leaderboard:async()=>({participants:[{...structuredClone(state),id:undefined,registered_at:undefined}],server_now:new Date().toISOString()})};
  window.__failQuiz=()=>{fail=true;};
  })();`;
- await page.unroute('**/database.js');
- await page.route('**/database.js',route=>route.fulfill({contentType:'application/javascript',body:fixture}));
+ await page.unroute('**/database.js*');
+ await page.route('**/database.js*',route=>route.fulfill({contentType:'application/javascript',body:fixture}));
+ let staleQuizLoaded=false;
+ // Emulate a previously cached, unversioned quiz that crashes on external songs.
+ await page.route('**/quiz.js',route=>{staleQuizLoaded=true;return route.fulfill({contentType:'application/javascript',body:"function showQuiz(){throw new Error(\"Cannot read properties of undefined (reading 'title')\");}"});});
  await page.goto('http://127.0.0.1:8770/');
  await page.evaluate(()=>{sessionStorage.removeItem('quiz-test');localStorage.setItem('gallery-night:instructions:v1','seen');});
  await page.setViewportSize({width:390,height:844});
  await page.goto('http://127.0.0.1:8770/?nfc=billie-jean');
  await page.locator('#quiz-dialog').waitFor({state:'visible'});
  if(await page.locator('#quiz-options button').count()!==3)throw Error('Missing three choices');
+ if(staleQuizLoaded)throw Error('Cached old quiz was loaded');
  if(!(await page.locator('#quiz-options').textContent()).includes('Africa')||!(await page.locator('#quiz-options').textContent()).includes('Footloose'))throw Error('External eighties choices missing');
  if(await page.locator('#quiz-dialog img').count())throw Error('Cover reveals answer');
  if((await page.locator('#preview-title').textContent()).includes('Billie Jean'))throw Error('Player reveals answer');

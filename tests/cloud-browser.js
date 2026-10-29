@@ -23,7 +23,7 @@ async page => {
       action:async(action,target,track,confirmed)=>{state.actions++;const p=state.participants.find(p=>p.id===target);if(action!=='unlock_all'&&!confirmed)throw new Error('Missing confirmation');if(action==='delete_unlock'){p.unlocks=p.unlocks.filter(u=>u.song_id!==track);p.completed_at=null;}else if(action==='clear_unlocks'){p.unlocks=[];p.completed_at=null;}else if(action==='delete_participant'){state.participants=state.participants.filter(p=>p.id!==target);}else if(action==='delete_all'){state.participants=[];}else if(action==='restart'){p.unlocks=[];p.registered_at=new Date().toISOString();p.completed_at=null;p.is_test=false;}else if(action==='unlock_all'){p.unlocks=tracks.map(song_id=>({song_id,unlocked_at:new Date().toISOString()}));p.is_test=true;p.completed_at=new Date().toISOString();}save();return snapshot();}
     };save();
   })();`;
-  await page.route('**/database.js', route => route.fulfill({contentType:'application/javascript',body:fixture}));
+  await page.route('**/database.js*', route => route.fulfill({contentType:'application/javascript',body:fixture}));
   await page.goto('http://127.0.0.1:8770/');
   await page.evaluate(()=>{sessionStorage.removeItem('cloud-test-state');localStorage.removeItem('gallery-night:theme');localStorage.setItem('gallery-night:instructions:v1','seen');});
   await page.reload();

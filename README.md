@@ -12,6 +12,8 @@ El hosting actual es GitHub Pages. La configuración histórica de Netlify no se
 
 Prueba local del paquete: `node build.cjs`, luego `python -m http.server 8765 --directory dist` y abrir `http://localhost:8765/`.
 
+Antes de publicar cambios de JavaScript o CSS, ejecutar `node version-assets.cjs` y guardar también `index.html`. Los enlaces incluyen una versión calculada por contenido para evitar cargar archivos viejos desde caché; CI verifica que coincidan. El paquete `dist/` genera esas versiones automáticamente. No cambia enlaces NFC, sesiones ni progreso.
+
 - Sin simulador. Un enlace NFC desbloquea la canción y reproduce un fragmento local en el diálogo. Si el navegador bloquea el inicio automático, ofrece Reproducir. Spotify queda como botón opcional.
 - El registro y los desbloqueos se guardan en Supabase con hora del servidor. El navegador conserva la sesión de la familia.
 - Los reinicios y borrados se gestionan desde Organización, con confirmación.

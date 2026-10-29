@@ -12,6 +12,7 @@ jobs:
           node-version: '22'
       - run: node --check quiz.js && node --check app.js && node --check audio.js && node --check database.js && node --check competition.js && node --check organizer.js && node --check config.js && node --check standings.js && node --check theme.js
       - run: node verify.cjs
+      - run: node version-assets.cjs --check
       - run: node verify-auth.cjs
       - run: npm install --prefix output/testdeps --no-save --package-lock=false --ignore-scripts @electric-sql/pglite@0.3.14
       - run: node verify-database.cjs output/testdeps/node_modules/@electric-sql/pglite/dist/index.cjs
