@@ -15,6 +15,7 @@ const key='en-frecuencia:v1';
 const $=s=>document.querySelector(s);
 let unlocked=new Set(),filter='all',toastTimer,albumIndex=0,adminUnlocked=false;
 let participantRecord=null;
+let familyMenuTrigger=null;
 function answeredSongs(person) { return person?.attempts?.length ?? person?.unlocks?.length ?? 0; }
 function failedSong(id) { return cloud && participantRecord?.attempts?.some(a=>a.song_id===id&&!a.correct); }
 const viewKey='gallery-night:album-view';
@@ -109,7 +110,7 @@ $('#album-carousel').addEventListener('touchstart',e=>{touchStart=e.touches.leng
 $('#album-carousel').addEventListener('touchend',e=>{if(!touchStart)return;const dx=e.changedTouches[0].clientX-touchStart.x,dy=e.changedTouches[0].clientY-touchStart.y;touchStart=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)moveAlbum(dx<0?1:-1)},{passive:true});
 $('#album-carousel').addEventListener('touchcancel',()=>{touchStart=null});
 const sectionIds=['inicio','albumes','guia','ranking','etiquetas'];
-function setMenu(open){document.body.classList.toggle('menu-open',open);$('#menu-toggle').setAttribute('aria-expanded',String(open));$('#menu-backdrop').hidden=!open;$('#site-navigation').inert=portraitMedia.matches&&!open;if(open){animateUI($('#menu-backdrop'),[{opacity:0},{opacity:1}],220);$('#site-navigation a').focus()}}
+function setMenu(open){setFamilyMenu(false);document.body.classList.toggle('menu-open',open);$('#menu-toggle').setAttribute('aria-expanded',String(open));$('#menu-backdrop').hidden=!open;$('#site-navigation').inert=portraitMedia.matches&&!open;if(open){animateUI($('#menu-backdrop'),[{opacity:0},{opacity:1}],220);$('#site-navigation a').focus()}}
 let currentSection='';
 function selectSection(id){if(!sectionIds.includes(id))id='inicio';if(id==='etiquetas'&&!adminUnlocked){id='inicio';openDialog($('#admin-dialog'));}const changed=currentSection!==id;currentSection=id;if(id!=='albumes')pausePreview(true);else if(changed)syncAlbumAudio();document.querySelectorAll('.page-section').forEach(panel=>{panel.hidden=panel.id!==id;if(!panel.hidden&&changed)animateUI(panel,[{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'translateY(0)'}],320)});document.querySelectorAll('[data-section]').forEach(link=>{if(link.dataset.section===id)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current')});setMenu(false);return id}
 function navigateTo(id){id=selectSection(id);if(location.hash!=='#'+id){try{history.pushState(null,'',location.pathname+location.search+'#'+id)}catch{}}const panel=$('#'+id);panel.setAttribute('tabindex','-1');panel.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'})}
@@ -133,14 +134,39 @@ function rememberInstructions(){try{localStorage.setItem(instructionsKey,'seen')
 function readFamily(){try{return (localStorage.getItem(familyKey)||'').trim().slice(0,40)}catch{return ''}}
 let familyName=cloud?'':readFamily();
 function isGenericFamily(name){return ['','tu familia','familia','mi familia'].includes(name.trim().replace(/\s+/g,' ').toLocaleLowerCase('es'))}
-function renderFamily(){const generic=isGenericFamily(familyName),label=generic?'Ingresar nombre de la familia':'Cambiar nombre de la familia '+familyName;$('#family-display').textContent=generic?'Ingresá tu familia':familyName;$('#header-family-display').textContent=generic?'Tu familia':familyName;$('#family-hint').textContent=generic?'Tocá acá para agregar el nombre':'Tocá acá para cambiar el nombre';$('#family-button').setAttribute('aria-label',label);$('#family-header-button').setAttribute('aria-label',label);$('#family-header-button').title=generic?'Ingresá el nombre de tu familia':familyName;$('#participant-logout').hidden=!familyName}
+function renderFamily(){const generic=isGenericFamily(familyName),label=generic?'Opciones de tu familia':'Opciones de la familia '+familyName;$('#family-display').textContent=generic?'Ingresá tu familia':familyName;$('#header-family-display').textContent=generic?'Tu familia':familyName;$('#family-hint').textContent='Ver opciones de la familia';$('#family-button').setAttribute('aria-label',label);$('#family-header-button').setAttribute('aria-label',label);$('#family-header-button').title=generic?'Ingresá el nombre de tu familia':familyName;$('#participant-logout').hidden=!familyName}
 function setFamily(value){if(cloud)return registerFamily(value);const name=value.trim().replace(/\s+/g,' ');if(isGenericFamily(name)||name.length>40){$('#family-error').textContent='Escribí el nombre de tu familia, hasta 40 caracteres.';return false}familyName=name;try{localStorage.setItem(familyKey,name)}catch{notify('El nombre se conservará solo mientras esta página esté abierta.')}renderFamily();rememberInstructions();$('#family-error').textContent='';$('#family-dialog').close();consumeLink();return true}
 $('#family-form').addEventListener('submit',e=>{e.preventDefault();setFamily($('#family-name').value)});
 $('#family-dialog').addEventListener('cancel',e=>{if(!familyName&&!cloud)e.preventDefault()});
 $('#family-dialog').addEventListener('close',()=>{if(!$('#family-instructions').hidden)rememberInstructions()});
 function askFamilyName(){setMenu(false);const first=needsInstructions();$('#family-instructions').hidden=!first;$('#family-name').value=isGenericFamily(familyName)?'':familyName;$('#family-error').textContent='';openDialog($('#family-dialog'));if(first){$('#family-title').focus();$('#family-dialog').scrollTop=0}else $('#family-name').focus()}
-$('#family-button').addEventListener('click',askFamilyName);
-$('#family-header-button').addEventListener('click',askFamilyName);
+function setFamilyMenu(open,trigger=familyMenuTrigger){
+ const menu=$('#family-dropdown');
+ menu.hidden=!open;
+ [$('#family-button'),$('#family-header-button')].forEach(button=>button.setAttribute('aria-expanded',String(open)));
+ if(open){
+  familyMenuTrigger=trigger;
+  const bounds=trigger.getBoundingClientRect();
+  menu.style.top=(bounds.bottom+8)+'px';
+  menu.style.right=Math.max(8,window.innerWidth-bounds.right)+'px';
+  $('#family-rename').focus();
+ }
+}
+for(const button of [$('#family-button'),$('#family-header-button')])button.addEventListener('click',()=>{
+ const open=$('#family-dropdown').hidden;
+ setMenu(false);setFamilyMenu(open,button);
+});
+$('#family-rename').addEventListener('click',askFamilyName);
+document.addEventListener('click',event=>{
+ if(!event.target.closest('#family-dropdown,#family-button,#family-header-button'))setFamilyMenu(false);
+});
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&!$('#family-dropdown').hidden){event.preventDefault();setFamilyMenu(false);familyMenuTrigger?.focus();}
+});
+document.addEventListener('focusin',event=>{
+ if(!event.target.closest('#family-dropdown,#family-button,#family-header-button'))setFamilyMenu(false);
+});
+window.addEventListener('resize',()=>setFamilyMenu(false));
 $('#family-guide-link').addEventListener('click',event=>{event.preventDefault();$('#family-dialog').close();navigateTo('guia')});
 renderFamily();
 unlocked=cloud?new Set():readProgress();render();renderLinks();if(!cloud){if(!isGenericFamily(familyName)&&!needsInstructions())consumeLink();else askFamilyName()}

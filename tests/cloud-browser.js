@@ -1,7 +1,8 @@
 async page => {
   const showMenu=async()=>{if(await page.locator('#menu-toggle').isVisible()&&!await page.locator('#site-navigation').isVisible())await page.locator('#menu-toggle').click();};
-  const clickFamily=async()=>{if(await page.locator('#family-dialog').isVisible())return;if(await page.locator('#family-header-button').isVisible())await page.locator('#family-header-button').click();else {await showMenu();await page.locator('#family-button').click();}};
-  const clickTheme=async()=>{await showMenu();await page.getByRole('button',{name:'Modo oscuro',exact:true}).click();};
+  const clickFamily=async()=>{if(await page.locator('#family-dialog').isVisible())return;if(await page.locator('#family-header-button').isVisible())await page.locator('#family-header-button').click();else {await showMenu();await page.locator('#family-button').click();}await page.locator('#family-rename').click();};
+  const clickLogout=async()=>{await page.evaluate(()=>setMenu(false));await page.locator(await page.locator('#family-header-button').isVisible()?'#family-header-button':'#family-button').click();await page.locator('#participant-logout').click();};
+  const clickTheme=async()=>{await showMenu();await page.locator('#theme-toggle').click();};
   const fixture = `(() => {
     const tracks=['billie-jean','take-on-me','with-or-without-you','sweet-dreams','every-breath-you-take','bohemian-rhapsody','sweet-child','la-isla-bonita'];
     const now=Date.now();
@@ -143,6 +144,28 @@ async page => {
   if(familySize.height<44||familySize.height>80)throw new Error('Family menu item is not proportionate');
   if(await page.locator('#site-navigation #family-button').isVisible()||!await page.locator('#family-header-button').isVisible()||await page.locator('#site-navigation #theme-toggle').count()!==1)throw new Error('Mobile family or theme control misplaced');
   if(await page.locator('#menu-close').isVisible())await page.locator('#menu-close').click();
+  for(const width of [320,390,844,1280]){
+    await page.setViewportSize({width,height:width===844?390:844});
+    const trigger=page.locator(await page.locator('#family-header-button').isVisible()?'#family-header-button':'#family-button');
+    await trigger.click();
+    await page.locator('#family-dropdown').waitFor({state:'visible'});
+    if(await trigger.getAttribute('aria-expanded')!=='true')throw new Error('Family dropdown did not expose expanded state');
+    const menu=await page.locator('#family-dropdown').boundingBox(),button=await trigger.boundingBox();
+    if(menu.x<0||menu.x+menu.width>width||Math.abs(menu.y-button.y-button.height-8)>2)throw new Error('Dropdown is not below family button');
+    if(await page.locator('#participant-logout').evaluate(node=>getComputedStyle(node).backgroundColor)!=='rgb(191, 24, 51)')throw new Error('Logout is not red');
+    if(width===390||width===1280)await page.screenshot({path:'output/playwright/family-dropdown-'+width+'.png'});
+    await page.keyboard.press('Escape');
+    if(await page.locator('#family-dropdown').isVisible())throw new Error('Escape did not close family dropdown');
+    if(!await trigger.evaluate(node=>node===document.activeElement))throw new Error('Escape did not restore family focus');
+    await trigger.click();await page.mouse.click(4,300);
+    if(await page.locator('#family-dropdown').isVisible())throw new Error('Outside click did not close dropdown');
+    await showMenu();
+    const themeBox=await page.locator('#theme-toggle').boundingBox();
+    if(themeBox.width!==46||themeBox.height!==46)throw new Error('Theme button is not square');
+    if(!['☀','☾'].includes(await page.locator('#theme-toggle').textContent()))throw new Error('Theme toggle contains text');
+    await page.evaluate(()=>setMenu(false));
+  }
+  await page.setViewportSize({width:390,height:844});
   const digitSize=await page.locator('#clock-digits').evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
   if(digitSize<56)throw new Error('Timer is too small');
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -246,11 +269,11 @@ async page => {
   await page.waitForFunction(()=>participantRecord?.name==='Familia para salir');
   await page.evaluate(async()=>{await unlockRemote('billie-jean');document.querySelectorAll('dialog[open]').forEach(d=>d.close());});
   await showMenu();
-  await page.locator('#participant-logout').click();
+  await clickLogout();
   await page.locator('#leave-dialog').waitFor({state:'visible'});
   await page.locator('#leave-cancel').click();
   if(await page.evaluate(()=>window.__cloudTest.leaveCalls||0)!==0)throw new Error('Cancelled logout deleted participant');
-  await showMenu();await page.locator('#participant-logout').click();
+  await showMenu();await clickLogout();
   await page.evaluate(()=>{window.__cloudTest.failLeave=true;});
   await page.locator('#leave-confirm').click();
   await page.waitForFunction(()=>document.querySelector('#leave-error').textContent==='No se pudo borrar tu participante');

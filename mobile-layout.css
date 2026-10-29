@@ -174,3 +174,9 @@
  .route-map > p { margin-inline:auto; }
  .map-open { width:100%; }
 }
+#family-dropdown {position:fixed;z-index:45;display:grid;gap:8px;width:min(230px,calc(100vw - 24px));padding:10px;background:var(--surface,var(--white));color:var(--ink,var(--deep));border:2px solid var(--green);box-shadow:4px 4px 0 var(--deep);}
+#family-dropdown button {width:100%;min-height:46px;padding:12px 14px;text-align:left;border:2px solid var(--green);background:var(--yellow);color:var(--deep);font:inherit;font-size:14px;font-weight:700;line-height:1.3;cursor:pointer;}
+#family-dropdown #participant-logout {background:#bf1833;border-color:#951028;color:white;}
+#family-dropdown #participant-logout:hover {background:#951028;}
+#family-dropdown button:focus-visible {outline:3px solid var(--yellow);outline-offset:3px;}
+#site-navigation #theme-toggle {width:46px;height:46px;min-width:46px;min-height:46px;flex:0 0 46px;padding:0;gap:0;font-size:25px;line-height:1;align-self:center;}
