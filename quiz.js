@@ -49,10 +49,11 @@ async function answerQuiz(choice) {
  }
 }
 function celebrateAnswer() {
+ const won=!!participantRecord?.completed_at && unlocked.size===songs.length && !participantRecord.is_test;
  const banner=document.createElement('div');
  banner.className='answer-celebration';
  banner.setAttribute('role','status');
- banner.innerHTML='<strong>✓ ¡ACERTASTE!</strong><p>Una canción más en tu colección.</p>';
+ banner.innerHTML=won?'<strong>★ ¡GANASTE!</strong><p>¡Adivinaste las ocho canciones!</p><p>Tu tiempo: '+elapsedText(participantRecord.elapsed_ms)+'. Mirá el ranking para conocer quién gana el premio.</p>':'<strong>✓ ¡ACERTASTE!</strong><p>Una canción más en tu colección.</p>';
  for(let i=0;i<18;i++){
   const confetti=document.createElement('span');
   confetti.setAttribute('aria-hidden','true');

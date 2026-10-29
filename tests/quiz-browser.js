@@ -71,6 +71,7 @@ async page => {
  });
  if(await page.evaluate(()=>participantRecord.attempts.length)!==8||await page.evaluate(()=>unlocked.size)!==7)throw Error('Answers or score incorrect');
  if(!await page.evaluate(()=>participantRecord.completed_at))throw Error('Clock did not finish with a wrong answer');
+ if(await page.locator('.answer-celebration').last().textContent().then(t=>t.includes('GANASTE')))throw Error('7/8 incorrectly won the game');
  const clock=await page.locator('#clock-digits').textContent();
  await page.waitForTimeout(1100);
  if(await page.locator('#clock-digits').textContent()!==clock)throw Error('Finished clock keeps running');
@@ -91,6 +92,20 @@ async page => {
   if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth||document.querySelector('#quiz-dialog').scrollWidth>document.querySelector('#quiz-dialog').clientWidth))throw Error('Quiz overflows at '+width);
   await page.locator('#quiz-close').click();
  }
+ await page.evaluate(()=>sessionStorage.removeItem('quiz-test'));
+ await page.reload();
+ await page.waitForFunction(()=>participantRecord?.attempts.length===0);
+ await page.evaluate(async()=>{
+  for(const song of songs) {
+   await unlockRemote(song.id);await answerQuiz(song.id);
+   if(song!==songs.at(-1))document.querySelectorAll('dialog[open]').forEach(d=>d.close());
+  }
+ });
+ await page.locator('.answer-celebration').getByText('★ ¡GANASTE!',{exact:true}).waitFor();
+ if(!(await page.locator('.answer-celebration').textContent()).includes('ranking'))throw Error('Game victory incorrectly claims competition prize');
+ await page.setViewportSize({width:390,height:844});
+ await page.waitForTimeout(500);
+ await page.screenshot({path:'output/playwright/game-won.png'});
  if(errors.length)throw Error(errors.join('\n'));
  return {passed:true,checks:'audio play/pause, concealed metadata, three choices, retry, success, permanent failure, 7/8 completion, ranking, grid, responsive layout'};
 }
