@@ -40,7 +40,17 @@ async page => {
  await page.screenshot({path:'output/playwright/song-quiz-mobile.png'});
  await page.getByRole('button',{name:'B · Billie Jean',exact:true}).click();
  await page.locator('#song-dialog').waitFor({state:'visible'});
+ await page.locator('.answer-celebration').getByText('✓ ¡ACERTASTE!',{exact:true}).waitFor();
+ if(await page.locator('.answer-celebration span').count()!==18)throw Error('Missing success confetti');
+ await page.waitForTimeout(500);
+ await page.screenshot({path:'output/playwright/correct-answer-celebration.png'});
+ await page.emulateMedia({reducedMotion:'reduce'});
+ if(await page.locator('.answer-celebration span').first().evaluate(node=>getComputedStyle(node).display)!=='none')throw Error('Celebration ignores reduced motion');
+ await page.emulateMedia({reducedMotion:'no-preference'});
  if(await page.evaluate(()=>unlocked.size)!==1)throw Error('Correct answer not unlocked');
+ await page.locator('#song-dialog button[data-close]').first().click();
+ await page.evaluate(()=>showSong(songs[0],true));
+ if(await page.locator('.answer-celebration').count())throw Error('Replaying a song celebrated again');
  await page.locator('#song-dialog button[data-close]').first().click();
  await page.goto('http://127.0.0.1:8770/?nfc=take-on-me');
  await page.locator('#quiz-dialog').waitFor({state:'visible'});

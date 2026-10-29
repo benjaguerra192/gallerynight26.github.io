@@ -76,3 +76,11 @@
 #quiz-player .preview-player {text-align:left;}
 .standings-table .song-failed {color:#a8172e;background:#ffe1e5;font-weight:800;}
 .missed .locked-cover strong {color:#f4c2c9;}
+.answer-celebration {position:relative;overflow:hidden;margin:0 0 22px;padding:24px 12px;border:3px solid var(--yellow);background:#145530;color:#fffef7;box-shadow:4px 4px 0 var(--red);text-align:center;}
+.answer-celebration strong {display:block;font:900 clamp(30px,8vw,48px)/1.1 var(--display);color:var(--yellow);}
+.answer-celebration p {margin:10px 0 0;color:#fffef7;font-size:14px;}
+.answer-celebration span {position:absolute;top:-18px;left:calc(var(--piece)*5.6%);width:8px;height:14px;background:var(--yellow);pointer-events:none;animation:answer-confetti 1.6s calc(var(--piece)*35ms) ease-out both;}
+.answer-celebration span:nth-of-type(3n) {background:var(--red);}
+.answer-celebration span:nth-of-type(3n + 1) {background:white;}
+@keyframes answer-confetti {from {transform:translateY(0) rotate(0);opacity:1;}to {transform:translateY(170px) rotate(420deg);opacity:0;}}
+@media(prefers-reduced-motion:reduce) {.answer-celebration span {display:none;}}

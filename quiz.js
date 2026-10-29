@@ -38,7 +38,7 @@ async function answerQuiz(choice) {
   if(attempt.correct) {
    $('#quiz-dialog').close();
    albumIndex=visibleSongs().findIndex(s=>s.id===song.id);
-   navigateTo('albumes');render();showSong(song);
+   navigateTo('albumes');render();showSong(song);celebrateAnswer();
   } else showQuizResult(song);
   refreshPublicLeaderboard();
   if(adminUnlocked)refreshOrganizer();
@@ -47,6 +47,21 @@ async function answerQuiz(choice) {
   answeringQuiz=false;$('#quiz-close').disabled=false;
   $('#quiz-options').querySelectorAll('button').forEach(b=>b.disabled=false);
  }
+}
+function celebrateAnswer() {
+ const banner=document.createElement('div');
+ banner.className='answer-celebration';
+ banner.setAttribute('role','status');
+ banner.innerHTML='<strong>✓ ¡ACERTASTE!</strong><p>Una canción más en tu colección.</p>';
+ for(let i=0;i<18;i++){
+  const confetti=document.createElement('span');
+  confetti.setAttribute('aria-hidden','true');
+  confetti.style.setProperty('--piece',i);
+  banner.append(confetti);
+ }
+ $('#song-detail').prepend(banner);
+ $('#song-dialog').scrollTop=0;
+ animateUI(banner,[{transform:'scale(.88)',opacity:.2},{transform:'scale(1.04)',opacity:1,offset:.7},{transform:'scale(1)',opacity:1}],450);
 }
 function showQuizResult(song) {
  pausePreview(true);activeQuiz=null;
