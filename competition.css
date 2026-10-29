@@ -84,3 +84,18 @@
 .answer-celebration span:nth-of-type(3n + 1) {background:white;}
 @keyframes answer-confetti {from {transform:translateY(0) rotate(0);opacity:1;}to {transform:translateY(170px) rotate(420deg);opacity:0;}}
 @media(prefers-reduced-motion:reduce) {.answer-celebration span {display:none;}}
+#effectiveness {max-width:880px;margin:16px auto;padding:16px 20px;border:2px solid var(--yellow);background:#103c26;color:#fffef7;text-align:center;}
+.effectiveness-summary {text-align:center;margin:16px 0 0;}
+.effectiveness-summary p {margin:0 0 12px;line-height:1.4;}
+.effectiveness-summary b {font:900 28px var(--display);}
+.effectiveness-summary small {display:block;margin-top:10px;font-size:12px;line-height:1.5;}
+.effectiveness-track {position:relative;height:20px;overflow:hidden;border:2px solid #145530;background:#092c1b;}
+.effectiveness-track::after {content:'';position:absolute;inset:0;background:repeating-linear-gradient(to right,transparent 0 calc(12.5% - 1px),#14553088 calc(12.5% - 1px) 12.5%);pointer-events:none;}
+.effectiveness-fill {height:100%;background:var(--yellow);transition:width 350ms ease-out;}
+#effectiveness .effectiveness-summary {margin:0;}
+#effectiveness b,.answer-celebration .effectiveness-summary b {color:var(--yellow);}
+.quiz-disc.quiz-missed {position:relative;background:#981b32;border-color:#e72e48;color:white;font-weight:900;}
+.quiz-missed::after {content:'';position:absolute;inset:-5px;border:3px solid #e72e48;border-radius:50%;animation:missed-ring 700ms ease-out both;}
+@keyframes missed-ring {from {transform:scale(.85);opacity:.8;}to {transform:scale(1.65);opacity:0;}}
+@media(max-width:750px) {#effectiveness {margin:12px 16px;padding:14px 16px;}}
+@media(prefers-reduced-motion:reduce) {.quiz-missed::after {animation:none;display:none;}}

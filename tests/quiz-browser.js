@@ -23,6 +23,7 @@ async page => {
  await page.goto('http://127.0.0.1:8770/?nfc=billie-jean');
  await page.locator('#quiz-dialog').waitFor({state:'visible'});
  if(await page.locator('#quiz-options button').count()!==3)throw Error('Missing three choices');
+ if(await page.locator('#effectiveness [role="progressbar"]').getAttribute('aria-valuenow')!=='0')throw Error('Effectiveness must start at zero');
  if(staleQuizLoaded)throw Error('Cached old quiz was loaded');
  if(!(await page.locator('#quiz-options').textContent()).includes('Africa')||!(await page.locator('#quiz-options').textContent()).includes('Footloose'))throw Error('External eighties choices missing');
  if(await page.locator('#quiz-dialog img').count())throw Error('Cover reveals answer');
@@ -48,6 +49,7 @@ async page => {
  if(await page.locator('.answer-celebration span').first().evaluate(node=>getComputedStyle(node).display)!=='none')throw Error('Celebration ignores reduced motion');
  await page.emulateMedia({reducedMotion:'no-preference'});
  if(await page.evaluate(()=>unlocked.size)!==1)throw Error('Correct answer not unlocked');
+ if(await page.locator('#effectiveness [role="progressbar"]').getAttribute('aria-valuenow')!=='12.5')throw Error('One correct answer must add 12.5%');
  await page.locator('#song-dialog button[data-close]').first().click();
  await page.evaluate(()=>showSong(songs[0],true));
  if(await page.locator('.answer-celebration').count())throw Error('Replaying a song celebrated again');
@@ -56,6 +58,11 @@ async page => {
  await page.locator('#quiz-dialog').waitFor({state:'visible'});
  await page.locator('#quiz-options button').first().click();
  await page.getByRole('heading',{name:'Esta canción se perdió',exact:true}).waitFor();
+ if(await page.locator('.quiz-missed').textContent()!=='✕')throw Error('Missing wrong answer animation icon');
+ if(await page.locator('#quiz-effectiveness [role="progressbar"]').getAttribute('aria-valuenow')!=='12.5')throw Error('Wrong answer increased effectiveness');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ if(await page.locator('.quiz-missed').evaluate(node=>getComputedStyle(node,'::after').display)!=='none')throw Error('Failure animation ignores reduced motion');
+ await page.emulateMedia({reducedMotion:'no-preference'});
  if(await page.evaluate(()=>unlocked.size)!==1)throw Error('Wrong answer unlocked song');
  await page.screenshot({path:'output/playwright/song-quiz-wrong.png'});
  await page.reload();
@@ -106,6 +113,29 @@ async page => {
  await page.setViewportSize({width:390,height:844});
  await page.waitForTimeout(500);
  await page.screenshot({path:'output/playwright/game-won.png'});
+ if(await page.locator('#effectiveness [role="progressbar"]').getAttribute('aria-valuenow')!=='100')throw Error('Eight correct answers must reach 100%');
+ await page.evaluate(()=>sessionStorage.removeItem('quiz-test'));
+ await page.reload();
+ await page.waitForFunction(()=>participantRecord?.attempts.length===0);
+ await page.evaluate(async()=>{
+  for(const [index,song] of songs.entries()) {
+   await unlockRemote(song.id);await answerQuiz(index<2?'Africa':song.id);
+   if(index<7)document.querySelectorAll('dialog[open]').forEach(d=>d.close());
+  }
+ });
+ if(await page.locator('#effectiveness [role="progressbar"]').getAttribute('aria-valuenow')!=='75')throw Error('Two mistakes must end at 75%');
+ if(await page.locator('.answer-celebration [role="progressbar"]').getAttribute('aria-valuenow')!=='75')throw Error('Final dialog is missing 75% bar');
+ if(!(await page.locator('.answer-celebration').textContent()).includes('Lograste un 75% de efectividad'))throw Error('Final effectiveness text missing');
+ await page.waitForTimeout(500);
+ await page.screenshot({path:'output/playwright/effectiveness-75.png'});
+ await page.reload();
+ await page.waitForFunction(()=>participantRecord?.attempts.length===8);
+ if(await page.locator('#effectiveness [role="progressbar"]').getAttribute('aria-valuenow')!=='75')throw Error('Reload lost effectiveness');
+ await page.evaluate(()=>unlockRemote('billie-jean'));
+ if(!(await page.locator('#quiz-effectiveness').textContent()).includes('Lograste un 75% de efectividad'))throw Error('Lost song result omitted final effectiveness');
+ if(await page.locator('#quiz-effectiveness [role="progressbar"]').getAttribute('aria-valuenow')!=='75')throw Error('Lost song final bar is incorrect');
+ await page.waitForTimeout(300);
+ await page.screenshot({path:'output/playwright/effectiveness-75-wrong.png'});
  if(errors.length)throw Error(errors.join('\n'));
  return {passed:true,checks:'audio play/pause, concealed metadata, three choices, retry, success, permanent failure, 7/8 completion, ranking, grid, responsive layout'};
 }

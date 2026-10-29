@@ -18,6 +18,11 @@ let participantRecord=null;
 let familyMenuTrigger=null;
 function answeredSongs(person) { return person?.attempts?.length ?? person?.unlocks?.length ?? 0; }
 function failedSong(id) { return cloud && participantRecord?.attempts?.some(a=>a.song_id===id&&!a.correct); }
+function effectivenessHtml() {
+ const percent=unlocked.size/songs.length*100,formatted=percent.toLocaleString('es-AR');
+ const finished=!!participantRecord?.completed_at;
+ return '<div class="effectiveness-summary"><p>'+(finished?'Lograste un <b>'+formatted+'%</b> de efectividad':'Efectividad acumulada: <b>'+formatted+'%</b>')+'</p><div class="effectiveness-track" role="progressbar" aria-label="Efectividad del recorrido" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'"><div class="effectiveness-fill" style="width:'+percent+'%"></div></div><small>'+unlocked.size+'/'+songs.length+' aciertos · Cada acierto suma 12,5%</small></div>';
+}
 const viewKey='gallery-night:album-view';
 let albumView='carousel';
 try{if(localStorage.getItem(viewKey)==='grid')albumView='grid'}catch{}
@@ -55,6 +60,8 @@ function render(){
  $('#total-count').textContent='/ '+String(total).padStart(2,'0');
  $('#all-count').textContent=String(total).padStart(2,'0');
  $('#progress').style.width=(n/total*100)+'%';
+ $('#effectiveness').hidden=cloud?!participantRecord:!familyName;
+ $('#effectiveness').innerHTML=effectivenessHtml();
  $('#progress-copy').textContent=n===total?'Colección completa. ¡Gracias por compartir este recorrido!':n?'Ya encontraron '+n+' de '+total+' canciones. ¡A buscar la próxima!':total+' canciones por descubrir. Su colección empieza con un escaneo.';
  if(cloud&&participantRecord)$('#progress-copy').textContent=n+' aciertos · '+answeredSongs(participantRecord)+'/8 respondidas. '+(participantRecord.completed_at?'¡Recorrido terminado! Mirá el ranking.':'Escuchá y adiviná la próxima.');
  const visible=visibleSongs();$('#empty').hidden=visible.length>0;

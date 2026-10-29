@@ -80,6 +80,8 @@ Se requiere Internet para registrar o desbloquear. Mantener Anonymous Sign-Ins a
 
 Cada NFC nuevo abre un desafío con tres opciones persistidas por el servidor: la canción correcta y dos distractores elegidos al azar de otros clásicos de los 80, fuera de las ocho canciones del recorrido. La canción se escucha sin mostrar artista ni portada. Acertar desbloquea; fallar pierde esa canción sin reintento, pero mantiene la elegibilidad para el premio. El servidor conserva la primera respuesta, incluso con recargas o reintentos de red. Organización puede borrar una respuesta (también incorrecta), todas las respuestas, o reiniciar tiempo y avance. Los desbloqueos anteriores a esta función se conservan como aciertos.
 
+La barra de efectividad calcula aciertos sobre las ocho canciones: cada acierto suma 12,5 puntos porcentuales. Al terminar, seis aciertos y dos errores muestran «Lograste un 75% de efectividad». Se muestra debajo del reloj y en los resultados. Los errores tienen una cruz roja animada; las animaciones respetan movimiento reducido.
+
 Los enlaces NFC existentes siguen funcionando. Sus identificadores y los archivos estáticos permiten deducir la canción al inspeccionar la URL o el código: este juego escolar no valida presencia física ni evita trampas con herramientas de desarrollo.
 
 Sin configuración de Supabase existe un modo demo local anterior, sin desafíos ni ranking real; su contraseña histórica no otorga permisos en la base de datos.

@@ -8,6 +8,9 @@ function showQuiz(song,challenge) {
  $('#quiz-options').replaceChildren();
  $('#quiz-player').hidden=false;
  $('#quiz-continue').hidden=true;
+ $('#quiz-effectiveness').hidden=true;
+ $('#quiz-dialog .quiz-disc').className='quiz-disc';
+ $('#quiz-dialog .quiz-disc').textContent='♫';
  challenge.choices.forEach((id,index)=>{
   const title=songs.find(s=>s.id===id)?.title || id;
   const button=document.createElement('button');
@@ -39,7 +42,7 @@ async function answerQuiz(choice) {
    $('#quiz-dialog').close();
    albumIndex=visibleSongs().findIndex(s=>s.id===song.id);
    navigateTo('albumes');render();showSong(song);celebrateAnswer();
-  } else showQuizResult(song);
+  } else showQuizResult(song,true);
   refreshPublicLeaderboard();
   if(adminUnlocked)refreshOrganizer();
  } catch(error) { $('#quiz-error').textContent=error.message; }
@@ -54,6 +57,7 @@ function celebrateAnswer() {
  banner.className='answer-celebration';
  banner.setAttribute('role','status');
  banner.innerHTML=won?'<strong>★ ¡GANASTE!</strong><p>¡Adivinaste las ocho canciones!</p><p>Tu tiempo: '+elapsedText(participantRecord.elapsed_ms)+'. Mirá el ranking para conocer quién gana el premio.</p>':'<strong>✓ ¡ACERTASTE!</strong><p>Una canción más en tu colección.</p>';
+ banner.insertAdjacentHTML('beforeend',effectivenessHtml());
  for(let i=0;i<18;i++){
   const confetti=document.createElement('span');
   confetti.setAttribute('aria-hidden','true');
@@ -64,13 +68,18 @@ function celebrateAnswer() {
  $('#song-dialog').scrollTop=0;
  animateUI(banner,[{transform:'scale(.88)',opacity:.2},{transform:'scale(1.04)',opacity:1,offset:.7},{transform:'scale(1)',opacity:1}],450);
 }
-function showQuizResult(song) {
+function showQuizResult(song,animate=false) {
  pausePreview(true);activeQuiz=null;
  $('#quiz-title').textContent='Esta canción se perdió';
- $('#quiz-copy').textContent='La respuesta era «'+song.title+'» de '+song.artist+'. No se puede volver a intentar esta canción. Sigan buscando las demás: todavía participan por el premio. Ganan más aciertos; en empate, menor tiempo al responder las ocho.';
+ $('#quiz-copy').textContent='La respuesta era «'+song.title+'» de '+song.artist+'. Esta canción no se puede volver a intentar. Sigan buscando las demás: todavía participan por el premio.';
+ const disc=$('#quiz-dialog .quiz-disc');
+ disc.className='quiz-disc quiz-missed';disc.textContent='✕';
+ $('#quiz-effectiveness').hidden=false;
+ $('#quiz-effectiveness').innerHTML=effectivenessHtml();
  $('#quiz-options').replaceChildren();$('#quiz-error').textContent='';
  $('#quiz-player').hidden=true;$('#quiz-continue').hidden=false;
  openDialog($('#quiz-dialog'));
+ if(animate)animateUI(disc,[{transform:'translateX(0) rotate(0)'},{transform:'translateX(-12px) rotate(-10deg)'},{transform:'translateX(12px) rotate(10deg)'},{transform:'translateX(-7px) rotate(-5deg)'},{transform:'translateX(7px) rotate(5deg)'},{transform:'translateX(0) rotate(0)'}],550);
  $('#quiz-continue').focus();
 }
 $('#quiz-dialog').addEventListener('cancel',event=>{if(answeringQuiz)event.preventDefault();});
