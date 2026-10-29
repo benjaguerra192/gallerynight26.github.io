@@ -168,6 +168,9 @@ async function denied(action) { await assert.rejects(action, /permission denied|
   assert.equal(quiz.challenge.choices.length,3);
   assert.equal(new Set(quiz.challenge.choices).size,3);
   assert.ok(quiz.challenge.choices.includes(tracks[0]));
+  assert.equal(quiz.challenge.choices.filter(choice=>tracks.includes(choice)).length,1,'Only the correct song may come from the hunt');
+  const externalChoices=['Africa','Everybody Wants to Rule the World','Never Gonna Give You Up','Girls Just Want to Have Fun','Wake Me Up Before You Go-Go','Livin’ on a Prayer','Eye of the Tiger','Footloose'];
+  assert.ok(quiz.challenge.choices.filter(choice=>choice!==tracks[0]).every(choice=>externalChoices.includes(choice)));
   assert.deepEqual((await call('gn_challenge',[tracks[0]])).challenge,quiz.challenge);
   const invalid=tracks.find(t=>!quiz.challenge.choices.includes(t));
   await assert.rejects(()=>call('gn_answer',[tracks[0],invalid]),/tres opciones/);

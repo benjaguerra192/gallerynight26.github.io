@@ -9,9 +9,9 @@ function showQuiz(song,challenge) {
  $('#quiz-player').hidden=false;
  $('#quiz-continue').hidden=true;
  challenge.choices.forEach((id,index)=>{
-  const option=songs.find(s=>s.id===id);
+  const title=songs.find(s=>s.id===id)?.title || id;
   const button=document.createElement('button');
-  button.type='button';button.textContent=String.fromCharCode(65+index)+' · '+option.title;
+  button.type='button';button.textContent=String.fromCharCode(65+index)+' · '+title;
   button.addEventListener('click',()=>answerQuiz(id));
   $('#quiz-options').append(button);
  });

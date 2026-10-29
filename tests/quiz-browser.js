@@ -7,7 +7,7 @@ async page => {
  const me=()=>({participant:structuredClone(state),event:{is_open:true,mode:'open'},server_now:new Date().toISOString()});
  const save=()=>sessionStorage.setItem('quiz-test',JSON.stringify(state));
  window.galleryCloud={me:async()=>me(),restoreAdmin:async()=>null,
- challenge:async track=>{if(state.attempts.some(a=>a.song_id===track))return me();pending[track]=[tracks.find(t=>t!==track),track,tracks.filter(t=>t!==track)[1]];return {...me(),challenge:{track,choices:pending[track]}};},
+ challenge:async track=>{if(state.attempts.some(a=>a.song_id===track))return me();pending[track]=['Africa',track,'Footloose'];return {...me(),challenge:{track,choices:pending[track]}};},
  answer:async(track,choice)=>{if(fail){fail=false;throw new Error('Error de conexión. Reintentá.');}await new Promise(r=>setTimeout(r,80));if(!state.attempts.some(a=>a.song_id===track)){const at=new Date().toISOString();state.attempts.push({song_id:track,correct:track===choice,answered_at:at,selected:choice});if(track===choice)state.unlocks.push({song_id:track,unlocked_at:at});if(state.attempts.length===8)state.completed_at=at;state.elapsed_ms=Date.parse(state.completed_at||at)-Date.parse(state.registered_at);save();}return me();},
  leaderboard:async()=>({participants:[{...structuredClone(state),id:undefined,registered_at:undefined}],server_now:new Date().toISOString()})};
  window.__failQuiz=()=>{fail=true;};
@@ -20,6 +20,7 @@ async page => {
  await page.goto('http://127.0.0.1:8770/?nfc=billie-jean');
  await page.locator('#quiz-dialog').waitFor({state:'visible'});
  if(await page.locator('#quiz-options button').count()!==3)throw Error('Missing three choices');
+ if(!(await page.locator('#quiz-options').textContent()).includes('Africa')||!(await page.locator('#quiz-options').textContent()).includes('Footloose'))throw Error('External eighties choices missing');
  if(await page.locator('#quiz-dialog img').count())throw Error('Cover reveals answer');
  if((await page.locator('#preview-title').textContent()).includes('Billie Jean'))throw Error('Player reveals answer');
  await page.locator('#preview-toggle').click();
@@ -72,7 +73,7 @@ async page => {
  });
  for(const width of [320,390,844,1280]){
   await page.setViewportSize({width,height:width===844?390:844});
-  await page.evaluate(()=>showQuiz(songs[0],{choices:['take-on-me','billie-jean','sweet-dreams']}));
+  await page.evaluate(()=>showQuiz(songs[0],{choices:['Everybody Wants to Rule the World','billie-jean','Wake Me Up Before You Go-Go']}));
   if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth||document.querySelector('#quiz-dialog').scrollWidth>document.querySelector('#quiz-dialog').clientWidth))throw Error('Quiz overflows at '+width);
   await page.locator('#quiz-close').click();
  }
