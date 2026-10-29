@@ -1,4 +1,4 @@
-# Gallery Night · Back to the 80s
+# Musical Hunt · Back to the 80s
 
 Sitio estático en GitHub Pages con competencia y autenticación en Supabase. Para probarlo localmente, usá un servidor HTTP.
 
