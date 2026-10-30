@@ -246,7 +246,7 @@ async page => {
   await page.locator('#site-navigation [data-section="guia"]').click();
   if(await page.locator('#guia .how > div').count()!==6)throw new Error('Complete instructions unavailable in menu');
   await page.locator('#guia .route-map img').scrollIntoViewIfNeeded();
-  await page.waitForFunction(()=>document.querySelector('#guia .route-map img').naturalWidth===1997);
+  await page.waitForFunction(()=>document.querySelector('#guia .route-map img').naturalWidth===1983);
   if(await page.locator('#inicio .route-map img').count()!==1)throw new Error('Home map is missing');
   if(!(await page.locator('#guia .route-map').textContent()).includes('cuántas etiquetas NFC'))throw new Error('Map count explanation missing');
   for(const width of [320,390,844,1280]){
